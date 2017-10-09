@@ -17,15 +17,15 @@ public class Main {
 	// Master objects
 	private static JFrame frame;
 	private static MainController mainController;
-	private static int screenWidth = 900;
-    private static int screenHeight = 500;
+	private static int screenWidth = 1800;
+    private static int screenHeight = 900;
 	
 	public static void main(String[] args) {
 		
 		// Comment this out if you don't want full screen logic
 		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-		screenWidth = screenSize.width;
-		screenHeight = screenSize.height;
+		//screenWidth = screenSize.width;
+		//screenHeight = screenSize.height;
 		
 		// Create our frame
 		frame = new JFrame();

@@ -5,10 +5,12 @@ import java.util.ArrayList;
 
 import javax.swing.JFrame;
 
+import view.Game;
+
 public class MainController {
 
 	JFrame frame;
-	int currentPanel;
+	Game game;
 	
 	/**
 	 * Default constructor
@@ -16,8 +18,13 @@ public class MainController {
 	public MainController(JFrame frame) {
 		// Store our jframe
 		this.frame = frame;
-		
+		this.game = new Game(this);
         frame.setLocationRelativeTo(null);
+        frame.getContentPane().add(this.game);
+		frame.getContentPane().doLayout();
+		frame.revalidate();
+		frame.repaint();
+		this.game.startup();
 	}
 	
 	public JFrame getFrame() {

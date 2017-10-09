@@ -5,8 +5,8 @@ public class Board {
 	private int worldWidth;
     private int worldHeight;
     
-    private final static int defaultWidth = 900;
-    private final static int defaultHeight = 500;
+    private final static int defaultWidth = 1800;
+    private final static int defaultHeight = 900;
     
     public Board() {
     	this(defaultWidth, defaultHeight);
