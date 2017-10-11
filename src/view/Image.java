@@ -10,7 +10,7 @@ import view.DrawOps;
 
 public enum Image {
 	
-	BACKGROUND("ocean.jpg"),
+	PLAYER("player.png"),
 	TILEGRASS("TileGrass.png");
 	
 	private BufferedImage origImg, scaledImg;
