@@ -11,7 +11,8 @@ import view.DrawOps;
 public enum Image {
 	
 	PLAYER("player.png"),
-	TILEGRASS("TileGrass.png");
+	TILEGRASS("TileGrass.png"),
+	TILESELECTED("TileSelected.png");
 	
 	private BufferedImage origImg, scaledImg;
 	private final String filePath;

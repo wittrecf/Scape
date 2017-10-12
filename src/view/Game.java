@@ -30,6 +30,7 @@ import controller.MainController;
 import model.Board;
 import model.BoardState;
 import model.BoardTile;
+import model.Player;
 
 public class Game extends JPanel implements ActionListener, MouseListener {
 	
@@ -42,8 +43,9 @@ public class Game extends JPanel implements ActionListener, MouseListener {
 	private int fontSize;
 	private int centerX;
 	private int centerY;
-	private int leftX;
-	private int topY;
+	//private int leftX;
+	//private int topY;
+	private Player player;
 	private String arrayFile = "resources/mapArray.txt";
 	
 	public Game(MainController mainController) {
@@ -53,9 +55,7 @@ public class Game extends JPanel implements ActionListener, MouseListener {
     	state = new BoardState();
     	state.board = board;
     	
-    	//temp
-    	leftX = 50;
-    	topY = 50;
+    	player = new Player("source link");
     	
     	try {
 			readMapArray();
@@ -99,16 +99,18 @@ public class Game extends JPanel implements ActionListener, MouseListener {
 			fontSize = 36;
 	    	Graphics2D g2 = (Graphics2D) g;
 			
-	    	int x = leftX;
-	    	int y = topY;
+	    	int x = player.getXLoc() - ((state.boardColsNum - 1) / 2);
+	    	int y = player.getYLoc() - ((state.boardRowsNum - 1) / 2);
 			for (ArrayList<BoardTile> ar: state.tiles) {
-				x = leftX;
+				x = player.getXLoc() - ((state.boardColsNum - 1) / 2);
 		    	for (BoardTile block: ar){
 		    		block.setXCoord(x);
 		    		block.setYCoord(y);
 		    		block.setType(state.mapTiles[x][y]);
 		    		if (block.getType() == 1) {
 		    			g2.drawImage(Image.TILEGRASS.getImg(), block.getXLoc(), block.getYLoc(), null);
+		    		} else if (block.getType() == 3) {
+		    			g2.drawImage(Image.TILESELECTED.getImg(), block.getXLoc(), block.getYLoc(), null);
 		    		}
 		    		if ((block.getXLoc() / Image.TILEGRASS.getWidth() == centerX) && (block.getYLoc() / Image.TILEGRASS.getHeight() == centerY)) {
 		    			g2.drawImage(Image.PLAYER.getImg(), block.getXLoc() + (int) (.05 * Image.TILEGRASS.getWidth()), block.getYLoc() + (int) (.05 * Image.TILEGRASS.getHeight()), null);
@@ -157,6 +159,15 @@ public class Game extends JPanel implements ActionListener, MouseListener {
     	for (int j = 0; j < state.mapRowsNum; j++) {
     		for (int i = 0; i < state.mapColsNum; i++) {
     			state.mapTiles[i][j] = tempArr.get(x);
+    			if ((i == 49) && (j == 50)) {
+    				state.mapTiles[i][j] = 0;
+    			}
+    			if ((i == 49) && (j == 51)) {
+    				state.mapTiles[i][j] = 0;
+    			}
+    			if ((i == 49) && (j == 49)) {
+    				state.mapTiles[i][j] = 0;
+    			}
     			x++;
     		}
     	}
@@ -172,14 +183,15 @@ public class Game extends JPanel implements ActionListener, MouseListener {
 		double scaleFactor = (double) newTileWidth/Image.TILEGRASS.getWidth();
 		
 		Image.TILEGRASS.scaleByFactor(scaleFactor);
-		System.out.println("TILE:" + Image.TILEGRASS.getWidth());
+		Image.TILESELECTED.scaleByFactor(scaleFactor);
 		
 		Image.PLAYER.scaleByFactor(scaleFactor);
 	}
 	
-	/**
-	 * Determines what button the player clicked, and adjusts the game accordingly.
-	 */
+	private void movePlayer(int x, int y) {
+		player.moveTo(x, y, state);
+	}
+	
 	public void actionPerformed(ActionEvent event) {
 		/*if(event.getSource() == btnExit) {
 			mainController.exitMini();
@@ -202,9 +214,7 @@ public class Game extends JPanel implements ActionListener, MouseListener {
 	public void mouseClicked(MouseEvent event) {
 		System.out.println("click");
 		int[] tmp = CollisionDetection.checkCollisionsTile(event.getX(), event.getY(), state.tiles);
-		state.mapTiles[tmp[0]][tmp[1]] = 0;
-		System.out.println("changed maptile at " + tmp[0] + ", " + tmp[1]);
-		System.out.println(state.mapTiles[tmp[0]][tmp[1]]);
+		movePlayer(tmp[0], tmp[1]);
 	}
 
 	public void mouseEntered(MouseEvent e) {}

@@ -15,7 +15,7 @@ public class CollisionDetection {
 				Rectangle bdBt = new Rectangle(bt.getXLoc(), bt.getYLoc(), Image.TILEGRASS.getWidth(), Image.TILEGRASS.getHeight());
 	            if (bdBt.intersects(bdClick)) {
 	            	int[] tmp = {bt.getXCoord(), bt.getYCoord()};
-	            	System.out.println("collision " + bt.getXCoord() + ", " + bt.getYCoord());
+	            	System.out.println("collision " + tmp[0] + ", " + tmp[1]);
 	            	return tmp;
 	            }
 	        }
