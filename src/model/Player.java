@@ -127,40 +127,58 @@ public class Player {
 		}
 	}
 	
-	private ArrayList<Node> createNodeMap(int l, BoardState state) {
-		System.out.println("L is " + l);
+	private ArrayList<Node> createNodeMap(int len, BoardState state) {
+		System.out.println("L is " + len);
+		Node[][] arr = new Node[(int) (2*len + 1)][(int) (2*len + 1)];
+		System.out.println("arr size x: " + arr.length);
+		System.out.println("arr size y: " + arr[0].length);
 		ArrayList<Node> list = new ArrayList<Node>();
 		Node n;
-		System.out.println("i spans from " + (this.getXLoc() - l) + " to " + (this.getXLoc() + l));
-		System.out.println("j spans from " + (this.getYLoc() - l) + " to " + (this.getYLoc() + l));
-		for (int i = this.getXLoc() - l; i <= this.getXLoc() + l; i++) {
-			for (int j = this.getYLoc() - l; j <= this.getYLoc() + l; j++) {
+		System.out.println("i spans from " + (this.getXLoc() - len) + " to " + (this.getXLoc() + len));
+		System.out.println("j spans from " + (this.getYLoc() - len) + " to " + (this.getYLoc() + len));
+		for (int i = this.getXLoc() - len; i <= this.getXLoc() + len; i++) {
+			for (int j = this.getYLoc() - len; j <= this.getYLoc() + len; j++) {
 				if (state.mapTiles[i][j] == 1) {
 					n = new Node(i, j);
 					if ((i == this.getXLoc()) && (j == this.getYLoc())) {
 						n.setDist(0);
 					}
-					list.add(n);
+				} else {
+					n = null;
 				}
+				arr[i - (this.getXLoc() - len)][j - (this.getYLoc() - len)] = n;
 			}
 		}
 		
 		int x;
 		int y;
 		
-		for (Node n1 : list) {
-			for (int i = 0; i < dir.length; i++) {
-				x = n1.getX() + dir[i][0];
-				y = n1.getY() + dir[i][1];
-				for (Node n2 : list) {
-					if ((n2.getX() == x) && (n2.getY() == y)) {
-						n1.addConnection(n2);
-						System.out.println("adding connection from " + n1.getX() + ", " + n1.getY() + " and " + n2.getX() + ", " + n2.getY());
+		for (Node[] ls : arr) {
+			for (Node n1 : ls) {
+				if (n1 != null) {
+					System.out.println("trying out " + n1.getX() + ", " + n1.getY());
+					for (int i = 0; i < dir.length; i++) {
+						x = n1.getX() + dir[i][0];
+						y = n1.getY() + dir[i][1];
+						System.out.println(x + " / " + y);
+						if ((x - (this.getXLoc() - len) >= 0) && (x - (this.getXLoc() - len) < 2*len) &&
+							(y - (this.getYLoc() - len) >= 0) && (y - (this.getYLoc() - len) < 2*len) &&
+							!(arr[x - (this.getXLoc() - len)][y - (this.getYLoc() - len)] == null)) {
+							n1.addConnection(arr[x - (this.getXLoc() - len)][y - (this.getYLoc() - len)]);
+							System.out.println("adding connection from " + n1.getX() + ", " + n1.getY() + " and " + arr[x - (this.getXLoc() - len)][y - (this.getYLoc() - len)].getX() + ", " + arr[x - (this.getXLoc() - len)][y - (this.getYLoc() - len)].getY());
+						}
 					}
 				}
 			}
 		}
 		
+		for (Node[] ls : arr) {
+			for (Node n1 : ls) {
+				if (n1 != null) {
+					list.add(n1);
+				}
+			}
+		}
 		return list;
 	}
 	
@@ -183,6 +201,7 @@ public class Player {
 		path.push(new int[]{x, y, 0});
 		
 		int level = 0;
+		/*
 		while (!isStart) {
 			for (int[] p : path) {
 				//System.out.println("at level " + level + ", we have " + p[0] + ", " + p[1]);
@@ -215,7 +234,9 @@ public class Player {
 				//System.out.println(path.peek()[0] + ",,, " + path.peek()[1] + ",,, " + path.peek()[2]);
 			}
 			level++;
-		}
+		}*/
+		
+		length = 20;
 		
 		System.out.println("chunk 1 done");
 		
