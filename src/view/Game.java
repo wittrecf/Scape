@@ -159,13 +159,13 @@ public class Game extends JPanel implements ActionListener, MouseListener {
     	for (int j = 0; j < state.mapRowsNum; j++) {
     		for (int i = 0; i < state.mapColsNum; i++) {
     			state.mapTiles[i][j] = tempArr.get(x);
-    			if ((i == 49) && (j == 50)) {
+    			if ((i == 46) && (j == 50)) {
     				state.mapTiles[i][j] = 0;
     			}
-    			if ((i == 49) && (j == 51)) {
+    			if ((i == 46) && (j == 51)) {
     				state.mapTiles[i][j] = 0;
     			}
-    			if ((i == 49) && (j == 49)) {
+    			if ((i == 46) && (j == 49)) {
     				state.mapTiles[i][j] = 0;
     			}
     			x++;
@@ -186,10 +186,6 @@ public class Game extends JPanel implements ActionListener, MouseListener {
 		Image.TILESELECTED.scaleByFactor(scaleFactor);
 		
 		Image.PLAYER.scaleByFactor(scaleFactor);
-	}
-	
-	private void movePlayer(int x, int y) {
-		player.moveTo(x, y, state);
 	}
 	
 	public void actionPerformed(ActionEvent event) {
@@ -214,7 +210,7 @@ public class Game extends JPanel implements ActionListener, MouseListener {
 	public void mouseClicked(MouseEvent event) {
 		System.out.println("click");
 		int[] tmp = CollisionDetection.checkCollisionsTile(event.getX(), event.getY(), state.tiles);
-		movePlayer(tmp[0], tmp[1]);
+		player.moveTo(tmp[0], tmp[1], state);
 	}
 
 	public void mouseEntered(MouseEvent e) {}

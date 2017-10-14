@@ -18,7 +18,6 @@ public class Player {
 	private String password;
 	private int xLoc;
 	private int yLoc;
-	private Stack<int[]> path;
 	private int[] inventory = new int[28];
 	
 	private int[][] dir = {{1, 1},
@@ -128,25 +127,25 @@ public class Player {
 	}
 	
 	private ArrayList<Node> createNodeMap(int len, BoardState state) {
-		System.out.println("L is " + len);
+		//System.out.println("L is " + len);
 		Node[][] arr = new Node[(int) (2*len + 1)][(int) (2*len + 1)];
-		System.out.println("arr size x: " + arr.length);
-		System.out.println("arr size y: " + arr[0].length);
 		ArrayList<Node> list = new ArrayList<Node>();
 		Node n;
-		System.out.println("i spans from " + (this.getXLoc() - len) + " to " + (this.getXLoc() + len));
-		System.out.println("j spans from " + (this.getYLoc() - len) + " to " + (this.getYLoc() + len));
+		//System.out.println("i spans from " + (this.getXLoc() - len) + " to " + (this.getXLoc() + len));
+		//System.out.println("j spans from " + (this.getYLoc() - len) + " to " + (this.getYLoc() + len));
 		for (int i = this.getXLoc() - len; i <= this.getXLoc() + len; i++) {
 			for (int j = this.getYLoc() - len; j <= this.getYLoc() + len; j++) {
-				if (state.mapTiles[i][j] == 1) {
-					n = new Node(i, j);
-					if ((i == this.getXLoc()) && (j == this.getYLoc())) {
-						n.setDist(0);
+				if (!((i < 0) || (i >= state.mapColsNum) || (j < 0) || (j >= state.mapRowsNum))) {
+					if (state.mapTiles[i][j] == 1) {
+						n = new Node(i, j);
+						if ((i == this.getXLoc()) && (j == this.getYLoc())) {
+							n.setDist(0);
+						}
+					} else {
+						n = null;
 					}
-				} else {
-					n = null;
+					arr[i - (this.getXLoc() - len)][j - (this.getYLoc() - len)] = n;
 				}
-				arr[i - (this.getXLoc() - len)][j - (this.getYLoc() - len)] = n;
 			}
 		}
 		
@@ -156,16 +155,17 @@ public class Player {
 		for (Node[] ls : arr) {
 			for (Node n1 : ls) {
 				if (n1 != null) {
-					System.out.println("trying out " + n1.getX() + ", " + n1.getY());
+					//System.out.println("trying out " + n1.getX() + ", " + n1.getY());
 					for (int i = 0; i < dir.length; i++) {
 						x = n1.getX() + dir[i][0];
 						y = n1.getY() + dir[i][1];
-						System.out.println(x + " / " + y);
+						//System.out.println(x + " / " + y);
 						if ((x - (this.getXLoc() - len) >= 0) && (x - (this.getXLoc() - len) < 2*len) &&
 							(y - (this.getYLoc() - len) >= 0) && (y - (this.getYLoc() - len) < 2*len) &&
 							!(arr[x - (this.getXLoc() - len)][y - (this.getYLoc() - len)] == null)) {
 							n1.addConnection(arr[x - (this.getXLoc() - len)][y - (this.getYLoc() - len)]);
-							System.out.println("adding connection from " + n1.getX() + ", " + n1.getY() + " and " + arr[x - (this.getXLoc() - len)][y - (this.getYLoc() - len)].getX() + ", " + arr[x - (this.getXLoc() - len)][y - (this.getYLoc() - len)].getY());
+							//System.out.println("adding connection from " + n1.getX() + ", " + n1.getY() + " and " + arr[x - (this.getXLoc() - len)][y - (this.getYLoc() - len)].getX() + ", " + arr[x - (this.getXLoc() - len)][y - (this.getYLoc() - len)].getY());
+
 						}
 					}
 				}
@@ -193,57 +193,16 @@ public class Player {
 	}
 	
 	private Node findPath(int x, int y, BoardState state) {
-		boolean isStart = false;
-		int size;
-		int length = 0;
-		Stack<int[]> tmpPath = new Stack<int[]>();
-		path = new Stack<int[]>();
-		path.push(new int[]{x, y, 0});
+		int length = 20;
 		
-		int level = 0;
-		/*
-		while (!isStart) {
-			for (int[] p : path) {
-				//System.out.println("at level " + level + ", we have " + p[0] + ", " + p[1]);
-				if ((p[2] == level) && !isStart) {
-					for (int i = 0; i < dir.length; i++) {
-						int[] tmp = new int[3];
-						tmp[0] = p[0] + dir[i][0];
-						tmp[1] = p[1] + dir[i][1];
-						tmp[2] = p[2] + 1;
-						//System.out.println("basis: " + p[0] + ", " + p[1] + ", " + p[2]);
-						//System.out.println("tmp: " + tmp[0] + ", " + tmp[1] + ", " + tmp[2]);
-						if ((state.mapTiles[tmp[0]][tmp[1]] == 1) && !path.contains(tmp)) {
-							tmpPath.push(tmp);
-							//System.out.println("adding: " + tmp[0] + ", " + tmp[1]);
-						}
-						if ((tmp[0] == this.getXLoc()) && (tmp[1] == this.getYLoc())) {
-							isStart = true;
-							System.out.println("end");
-							break;
-						}
-					}
-				}
-			}
-			size = tmpPath.size();
-			for (int i = 0; i < size; i++) {
-				if ((i == 0) && isStart) {
-					length = tmpPath.peek()[2];
-				}
-				path.push(tmpPath.pop());
-				//System.out.println(path.peek()[0] + ",,, " + path.peek()[1] + ",,, " + path.peek()[2]);
-			}
-			level++;
-		}*/
-		
-		length = 20;
-		
-		System.out.println("chunk 1 done");
+		//System.out.println("chunk 1 done");
 		
 		ArrayList<Node> list = createNodeMap(length, state);
 		Node min;
+		Node close = null;
+		int prox = 999;
 		
-		System.out.println("nodemap is length " + list.size());
+		//System.out.println("nodemap is length " + list.size());
 		
 		while (!list.isEmpty()) {
 			min = new Node(0,0);
@@ -254,12 +213,26 @@ public class Player {
 				}
 			}
 			
-			System.out.println("min is " + min.getX() + ", " + min.getY());
+			//System.out.println("min is " + min.getX() + ", " + min.getY());
 			
 			list.remove(min);
 			
-			if ((min.getX() == x) && (min.getY() == y)) {
+			if ((min.getX() == x) && (min.getY() == y) && (min.getDist() < 999)) {
+				//System.out.println("final min: " + min.getX() + ", " + min.getY());
 				return min;
+			} else if (min.getDist() < 999) {
+				int xDif = Math.abs(min.getX() - x);
+				int yDif = Math.abs(min.getY() - y);
+				int tmpProx;
+				if (xDif > yDif) {
+					tmpProx = (3 * yDif) + (2 * xDif - yDif);
+				} else {
+					tmpProx = (3 * xDif) + (2 * yDif - xDif);
+				}
+				if (tmpProx < prox) {
+					prox = tmpProx;
+					close = min;
+				}
 			}
 			
 			for (Node n : min.getConnections()) {
@@ -272,7 +245,7 @@ public class Player {
 				}
 			}
 		}
-		return null;
+		return close;
 	}
 	
 	public void moveTo(int x, int y, BoardState state) {
@@ -284,18 +257,22 @@ public class Player {
 			}
 		}
 		Node n = findPath(x, y, state);
-		for (int i = 0; i < 10; i++) {
+		this.xLoc = n.getX();
+		this.yLoc = n.getY();
+		while (true) {
 			System.out.println(n.getX() + ", " + n.getY());
 			System.out.println("dist " + n.getDist());
-			state.mapTiles[n.getX()][n.getY()] = 3;
-			if (n.getPrev() != null) {
-				n = n.getPrev();
+			if (n != null) {
+				state.mapTiles[n.getX()][n.getY()] = 3;
+				if (n.getPrev() != null) {
+					n = n.getPrev();
+				} else {
+					break;
+				}
 			} else {
 				break;
 			}
 		}
-		this.xLoc = x;
-		this.yLoc = y;
 	}
 	
 	public int getInventorySlot(int slot) {
