@@ -12,7 +12,8 @@ public enum Image {
 	
 	PLAYER("player.png"),
 	TILEGRASS("TileGrass.png"),
-	TILESELECTED("TileSelected.png");
+	TILESELECTED("TileSelected.png"),
+	EXIT_DEFAULT("btn_default.png");
 	
 	private BufferedImage origImg, scaledImg;
 	private final String filePath;

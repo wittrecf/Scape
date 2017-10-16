@@ -1,18 +1,24 @@
 package view;
 
 import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.LayoutManager;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Scanner;
@@ -34,28 +40,46 @@ import model.Player;
 
 public class Game extends JPanel implements ActionListener, MouseListener {
 	
-	private static GridBagLayout layout = new GridBagLayout();
-    private static GridBagConstraints c = new GridBagConstraints();
 	private boolean gameOver;
 	private Board board;
 	private Timer timer;
 	private BoardState state;
+	private Player player;
+	private MainController mainController;
+	
 	private int fontSize;
 	private int centerX;
 	private int centerY;
-	//private int leftX;
-	//private int topY;
-	private Player player;
+	
+	private JButton btnExit = new JButton();
+	private static GridBagLayout layout = new GridBagLayout();
+    private static GridBagConstraints c = new GridBagConstraints();
+	
 	private String arrayFile = "resources/mapArray.txt";
 	
 	public Game(MainController mainController) {
+		this.mainController = mainController;
 		
     	board = new Board(mainController.getWidth(), mainController.getHeight());
     	
     	state = new BoardState();
     	state.board = board;
     	
-    	player = new Player("source link");
+    	try {
+			player = Player.loadPlayer("SourceLink");
+		} catch (FileNotFoundException e1) {
+			e1.printStackTrace();
+		} catch (UnsupportedEncodingException e1) {
+			e1.printStackTrace();
+		}
+    	if (player == null) {
+    		player = Player.makeAccount("SourceLink");
+    	}
+    	if (player == null) {
+    		this.shutdown();
+    	}
+    	state.players = new ArrayList<Player>();
+    	state.players.add(player);
     	
     	try {
 			readMapArray();
@@ -64,6 +88,23 @@ public class Game extends JPanel implements ActionListener, MouseListener {
 		}
     	
 		scaleScreenItems();
+		
+		btnExit.setPreferredSize(new Dimension(Image.TILEGRASS.getWidth()*2, Image.TILEGRASS.getHeight()));
+		btnExit.setBackground(Color.WHITE);
+		btnExit.setForeground(Color.BLACK);
+		btnExit.setFont(new Font("TimesRoman", Font.BOLD, 20));
+		btnExit.setHorizontalTextPosition(JButton.CENTER);
+		btnExit.setVerticalTextPosition(JButton.CENTER);
+		btnExit.setText("Logout");
+		
+		setLayout(layout);
+        c.weightx = 0.1;
+        c.weighty = 0.1;
+    	c.anchor = GridBagConstraints.NORTHEAST;
+    	add(btnExit, c);
+    	c.anchor = GridBagConstraints.CENTER;
+		
+		btnExit.addActionListener(this);
 		
 		centerX = ((board.getWidth() - Image.TILEGRASS.getWidth()) / 2) / Image.TILEGRASS.getWidth();
     	centerY = ((board.getHeight() - Image.TILEGRASS.getHeight()) / 2) / Image.TILEGRASS.getHeight();
@@ -79,11 +120,24 @@ public class Game extends JPanel implements ActionListener, MouseListener {
 		createShoreline();
     	
 		timer = new Timer();
-		timer.scheduleAtFixedRate(new GameTimer(this, board), 0, 10);
+		timer.scheduleAtFixedRate(new GameTimer(this, board, state), 0, 10);
 	}
 
 	public void shutdown() {
+		try {
+			player.writePlayerData();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
 		if(timer != null) timer.cancel();
+		mainController.getFrame().getContentPane().removeAll();
+		WindowEvent wev = new WindowEvent(mainController.getFrame(), WindowEvent.WINDOW_CLOSING);
+		Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(wev);
+		setVisible(false);
+		mainController.getFrame().dispose();
+		System.exit(0);
 	}
 	
 	@Override
@@ -189,22 +243,9 @@ public class Game extends JPanel implements ActionListener, MouseListener {
 	}
 	
 	public void actionPerformed(ActionEvent event) {
-		/*if(event.getSource() == btnExit) {
-			mainController.exitMini();
+		if(event.getSource() == btnExit) {
+			this.shutdown();
 		}
-		else if(event.getSource() == btnRock) {
-			if (resourceM.btnEvent("Rock")) {
-				state.placementMode = 1;
-			}
-		} else if(event.getSource() == btnOyster) {
-			if (resourceM.btnEvent("Oyster")) {
-				state.placementMode = 2;
-			}
-		} else if(event.getSource() == btnGrass) {
-			if (resourceM.btnEvent("Grass")) {
-				state.placementMode = 3;
-			}
-		}*/
 	}
 	
 	public void mouseClicked(MouseEvent event) {

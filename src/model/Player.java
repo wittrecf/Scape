@@ -19,6 +19,7 @@ public class Player {
 	private int xLoc;
 	private int yLoc;
 	private int[] inventory = new int[28];
+	private ArrayList<Node> path;
 	
 	private int[][] dir = {{1, 1},
 			   			   {1, -1},
@@ -29,30 +30,45 @@ public class Player {
 						   {-1, 0},
 						   {0, -1}};
 	
-	private String userFile = "resources/userFile";
-	private String playerDataFile = "resources/playerDataFile";
+	private static String userFile = "resources/userFile";
+	private static String playerDataFile = "resources/playerDataFile";
 	
 	
 	private final int DEFAULTX = 50;
 	private final int DEFAULTY = 50;
-	private final int[] DEFAULTINVENTORY = {-1, -1, -1, -1,
+	private final int[] DEFAULT_INVENTORY = {-1, -1, -1, -1,
 											-1, -1, -1, -1,
 											-1, -1, -1, -1,
 											-1, -1, -1, -1,
 											-1, -1, -1, -1,
 											-1, -1, -1, -1,
 											-1, -1, -1, -1};
+	private final static int INVENTORY_SIZE = 28;
 	
 	public Player(String user) {
-		//makePassword();
-		xLoc = DEFAULTX;
-		yLoc = DEFAULTY;
-		inventory = DEFAULTINVENTORY;
+		makePassword();
+		this.username = user;
+		this.xLoc = DEFAULTX;
+		this.yLoc = DEFAULTY;
+		this.inventory = DEFAULT_INVENTORY;
+		this.path = new ArrayList<Node>();
 		try {
-			Files.write(Paths.get(playerDataFile), this.toString().getBytes(), StandardOpenOption.APPEND);
+			writePlayerData();
+			Files.write(Paths.get(userFile), (this.username + System.getProperty("line.separator")).getBytes(), StandardOpenOption.APPEND);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	private Player(String[] arr) {
+		this.username = arr[0];
+		this.password = arr[1];
+		this.xLoc = Integer.parseInt(arr[2]);
+		this.yLoc = Integer.parseInt(arr[3]);
+		for (int i = 1; i <= Player.INVENTORY_SIZE; i++) {
+			this.inventory[i - 1] = Integer.parseInt(arr[3 + i]);
+		}
+		this.path = new ArrayList<Node>();
 	}
 	
 	private void makePassword() {
@@ -64,6 +80,7 @@ public class Player {
 			input = scanner.nextLine();
 			System.out.print("Enter password again: ");
 			if (scanner.nextLine().equals(input)) {
+				this.password = input;
 				done = true;
 			} else {
 				System.out.println("Passwords do not match.");
@@ -71,7 +88,7 @@ public class Player {
 		}
 	}
 	
-	private boolean searchUser(String u) {
+	private static boolean searchUser(String u) {
 		Scanner inFile = null;
 		try {
 			inFile = new Scanner(new File(userFile));
@@ -79,8 +96,8 @@ public class Player {
 			e.printStackTrace();
 		}
 		
-	    while (inFile.hasNext()) {
-	    	if (inFile.next().toLowerCase().equals(u.toLowerCase())) {
+	    while (inFile.hasNextLine()) {
+	    	if (inFile.nextLine().toLowerCase().equals(u.toLowerCase())) {
 	    		return true;
 	    	}
 	    }
@@ -88,8 +105,9 @@ public class Player {
 	    return false;
 	}
 	
-	public void writePlayerData(Player player) throws FileNotFoundException, UnsupportedEncodingException {
+	public void writePlayerData() throws FileNotFoundException, UnsupportedEncodingException {
 		Scanner inFile = null;
+		Boolean found = false;
 		try {
 			inFile = new Scanner(new File(playerDataFile));
 		} catch (FileNotFoundException e) {
@@ -109,16 +127,56 @@ public class Player {
 		String s = "";
 		while (it.hasNext()) {
 			s = it.next();
-			if (s.contains(player.getUsername())) {
-				s = player.toString();
+			if (s.contains(this.getUsername())) {
+				s = this.toString();
+				found  = true;
 			}
+			writer.println(s);
+		}
+		if (!found) {
+			s = this.toString();
 			writer.println(s);
 		}
 		writer.close();
 	}
 	
-	public Player makeAccount(String user) {
-		if (searchUser(user)) {
+	public static Player loadPlayer(String user) throws FileNotFoundException, UnsupportedEncodingException {
+		Scanner inFile = null;
+		String[] playerArr = new String[Player.INVENTORY_SIZE + 4];
+		try {
+			inFile = new Scanner(new File(playerDataFile));
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+		
+		ArrayList<String> tmp = new ArrayList<String>();
+		
+	    while (inFile.hasNext()) {
+	    	tmp.add(inFile.nextLine());
+	    }
+	    inFile.close();
+		
+		Iterator<String> it = tmp.iterator();
+		String s = "";
+		while (it.hasNext()) {
+			s = it.next();
+			if (s.toLowerCase().contains(user.toLowerCase())) {
+				String[] arr = s.split(" ");
+				playerArr[0] = arr[0];
+				playerArr[1] = arr[1];
+				playerArr[2] = arr[2];
+				playerArr[3] = arr[3];
+				for (int i = 1; i <= Player.INVENTORY_SIZE; i++) {
+					playerArr[3 + i] = arr[3 + i];
+				}
+				return new Player(playerArr);
+			}
+		}
+		return null;
+	}
+	
+	public static Player makeAccount(String user) {
+		if (Player.searchUser(user)) {
 			System.out.println("Username already taken.");
 			return null;
 		} else {
@@ -249,6 +307,9 @@ public class Player {
 	}
 	
 	public void moveTo(int x, int y, BoardState state) {
+		if (path.size() > 0) {
+			path = new ArrayList<Node>();
+		}
 		for (int j = 0; j < state.mapRowsNum; j++) {
     		for (int i = 0; i < state.mapColsNum; i++) {
 				if (state.mapTiles[i][j] == 3) {
@@ -257,21 +318,26 @@ public class Player {
 			}
 		}
 		Node n = findPath(x, y, state);
-		this.xLoc = n.getX();
-		this.yLoc = n.getY();
 		while (true) {
-			System.out.println(n.getX() + ", " + n.getY());
-			System.out.println("dist " + n.getDist());
+			//System.out.println(n.getX() + ", " + n.getY());
+			//System.out.println("dist " + n.getDist());
 			if (n != null) {
 				state.mapTiles[n.getX()][n.getY()] = 3;
 				if (n.getPrev() != null) {
+					path.add(n);
 					n = n.getPrev();
 				} else {
 					break;
 				}
-			} else {
-				break;
 			}
+		}
+	}
+	
+	public void move() {
+		if (path.size() > 0) {
+			this.xLoc = path.get(path.size() - 1).getX();
+			this.yLoc = path.get(path.size() - 1).getY();
+			path.remove(path.size() - 1);
 		}
 	}
 	
@@ -280,9 +346,9 @@ public class Player {
 	}
 	
 	public String toString() {
-		String s = this.username + " " + this.password + " " + this.xLoc + " " + this.yLoc;
+		String s = this.username + " " + this.password + " " + this.xLoc + " " + this.yLoc + " ";
 		for (int i = 0; i < inventory.length; i++) {
-			s += inventory[i];
+			s += inventory[i] + " ";
 		}
 		return s;
 	}

@@ -18,4 +18,6 @@ public class BoardState {
 	public int[][] mapTiles;
 	
 	public ArrayList<ArrayList<BoardTile>> tiles;
+	
+	public ArrayList<Player> players;
 }

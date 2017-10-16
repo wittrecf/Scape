@@ -8,6 +8,7 @@ public class BoardTile {
 	private int xCoord;
 	private int yCoord;
 	private int type;
+	private TileObject obj;
 
 	private static int width = Image.TILEGRASS.getWidth();
 	private static int height = Image.TILEGRASS.getHeight();
@@ -55,5 +56,13 @@ public class BoardTile {
 
 	public static int getHeight() {
 		return height;
+	}
+
+	public TileObject getObj() {
+		return obj;
+	}
+
+	public void setObj(TileObject obj) {
+		this.obj = obj;
 	}
 }
