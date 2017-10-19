@@ -20,6 +20,8 @@ public class Player {
 	private int yLoc;
 	private int[] inventory = new int[28];
 	private ArrayList<Node> path;
+	private int[] target;
+	private BoardState state;
 	
 	private int[][] dir = {{1, 1},
 			   			   {1, -1},
@@ -68,6 +70,7 @@ public class Player {
 		for (int i = 1; i <= Player.INVENTORY_SIZE; i++) {
 			this.inventory[i - 1] = Integer.parseInt(arr[3 + i]);
 		}
+		this.target = null;
 		this.path = new ArrayList<Node>();
 	}
 	
@@ -184,7 +187,7 @@ public class Player {
 		}
 	}
 	
-	private ArrayList<Node> createNodeMap(int len, BoardState state) {
+	private ArrayList<Node> createNodeMap(int len) {
 		//System.out.println("L is " + len);
 		Node[][] arr = new Node[(int) (2*len + 1)][(int) (2*len + 1)];
 		ArrayList<Node> list = new ArrayList<Node>();
@@ -250,12 +253,12 @@ public class Player {
 		return d;
 	}
 	
-	private Node findPath(int x, int y, BoardState state) {
+	private Node findPath(int x, int y) {
 		int length = 20;
 		
 		//System.out.println("chunk 1 done");
 		
-		ArrayList<Node> list = createNodeMap(length, state);
+		ArrayList<Node> list = createNodeMap(length);
 		Node min;
 		Node close = null;
 		int prox = 999;
@@ -306,7 +309,12 @@ public class Player {
 		return close;
 	}
 	
-	public void moveTo(int x, int y, BoardState state) {
+	public void moveTo(int x, int y, boolean isTarget) {
+		if (isTarget) {
+			this.target = new int[2];
+			this.target[0] = x;
+			this.target[1] = y;
+		}
 		if (path.size() > 0) {
 			path = new ArrayList<Node>();
 		}
@@ -317,7 +325,7 @@ public class Player {
 				}
 			}
 		}
-		Node n = findPath(x, y, state);
+		Node n = findPath(x, y);
 		while (true) {
 			//System.out.println(n.getX() + ", " + n.getY());
 			//System.out.println("dist " + n.getDist());
@@ -333,11 +341,19 @@ public class Player {
 		}
 	}
 	
+	private boolean checkAdjacency(int[] t) {
+		return (Math.abs(Math.abs(t[0] - xLoc) + Math.abs(t[1] - yLoc)) == 1);
+	}
+	
 	public void move() {
 		if (path.size() > 0) {
 			this.xLoc = path.get(path.size() - 1).getX();
 			this.yLoc = path.get(path.size() - 1).getY();
 			path.remove(path.size() - 1);
+		} else if (target != null) {
+			if (checkAdjacency(target)) {
+				state.tiles.get(target[0]).get(target[1]).getObj().start();
+			}
 		}
 	}
 	
@@ -363,5 +379,9 @@ public class Player {
 	
 	public int getYLoc() {
 		return this.yLoc;
+	}
+	
+	public void setState(BoardState state) {
+		this.state = state;
 	}
 }

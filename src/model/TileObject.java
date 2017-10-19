@@ -9,6 +9,9 @@ public abstract class TileObject {
 		yLoc = y;
 	}
 	
+	public void start(){
+	}
+	
 	public int getXLoc(){
 		return xLoc;
 	}

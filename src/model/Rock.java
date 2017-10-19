@@ -14,8 +14,20 @@ public enum Rock {
         this.oreId = oreId;
         this.baseTime = baseTime;
     }
-    private int level() {return level;}
-    private double xp() {return xp;}
-    private int ordId() {return oreId;}
-    private int baseTime() {return baseTime;}
+
+	public int getLevel() {
+		return level;
+	}
+
+	public double getXp() {
+		return xp;
+	}
+
+	public int getOreId() {
+		return oreId;
+	}
+
+	public int getBaseTime() {
+		return baseTime;
+	}
 }

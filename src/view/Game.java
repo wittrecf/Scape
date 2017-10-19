@@ -77,6 +77,8 @@ public class Game extends JPanel implements ActionListener, MouseListener {
     	}
     	if (player == null) {
     		this.shutdown();
+    	} else {
+    		player.setState(state);
     	}
     	state.players = new ArrayList<Player>();
     	state.players.add(player);
@@ -166,7 +168,7 @@ public class Game extends JPanel implements ActionListener, MouseListener {
 		    		} else if (block.getType() == 3) {
 		    			g2.drawImage(Image.TILESELECTED.getImg(), block.getXLoc(), block.getYLoc(), null);
 		    		}
-		    		if ((block.getXLoc() / Image.TILEGRASS.getWidth() == centerX) && (block.getYLoc() / Image.TILEGRASS.getHeight() == centerY)) {
+		    		if ((block.getXCoord() == player.getXLoc()) && (block.getYCoord() == player.getYLoc())) {
 		    			g2.drawImage(Image.PLAYER.getImg(), block.getXLoc() + (int) (.05 * Image.TILEGRASS.getWidth()), block.getYLoc() + (int) (.05 * Image.TILEGRASS.getHeight()), null);
 		    		}
 			    	g2.setColor(Color.WHITE);
@@ -251,7 +253,7 @@ public class Game extends JPanel implements ActionListener, MouseListener {
 	public void mouseClicked(MouseEvent event) {
 		System.out.println("click");
 		int[] tmp = CollisionDetection.checkCollisionsTile(event.getX(), event.getY(), state.tiles);
-		player.moveTo(tmp[0], tmp[1], state);
+		player.moveTo(tmp[0], tmp[1], tmp[2] == 1);
 	}
 
 	public void mouseEntered(MouseEvent e) {}
