@@ -1,5 +1,7 @@
 package model;
 
+import view.Image;
+
 public enum Rock {
     CLAY (10, 20, 10, 10);
 
