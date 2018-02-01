@@ -164,22 +164,21 @@ public class Game extends JPanel implements ActionListener, MouseListener {
 		    		block.setYCoord(y);
 		    		block.setType(state.mapTiles[x][y]);
 		    		if (block.getType() == 1) {
-		    			g2.drawImage(Image.TILEGRASS.getImg(), block.getXLoc(), block.getYLoc(), null);
+		    			g2.drawImage(Image.TILEGRASS.getImg(), block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), null);
 		    		} else if (block.getType() == 3) {
-		    			g2.drawImage(Image.TILESELECTED.getImg(), block.getXLoc(), block.getYLoc(), null);
-		    		}
-		    		if ((block.getXCoord() == player.getXLoc()) && (block.getYCoord() == player.getYLoc())) {
-		    			g2.drawImage(Image.PLAYER.getImg(), block.getXLoc() + (int) (.05 * Image.TILEGRASS.getWidth()), block.getYLoc() + (int) (.05 * Image.TILEGRASS.getHeight()), null);
+		    			g2.drawImage(Image.TILESELECTED.getImg(), block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), null);
 		    		}
 			    	g2.setColor(Color.WHITE);
 		    		g2.setFont(new Font("TimesRoman", Font.PLAIN, (int)(0.35*fontSize)));
-		    		g2.drawString(block.getXLoc() / Image.TILEGRASS.getWidth() + ":" + block.getYLoc() / Image.TILEGRASS.getHeight(), block.getXLoc() + 15, block.getYLoc() + 15);
+		    		//g2.drawString(block.getXLoc() / Image.TILEGRASS.getWidth() + ":" + block.getYLoc() / Image.TILEGRASS.getHeight(), block.getXLoc() + 15, block.getYLoc() + 15);
 		    		g2.setColor(Color.YELLOW);
-		    		g2.drawString(block.getXCoord() + ":" + block.getYCoord(), block.getXLoc() + 15, block.getYLoc() + 40);
+		    		//g2.drawString(block.getXCoord() + ":" + block.getYCoord(), block.getXLoc() + 15, block.getYLoc() + 40);
 					x++;
 		    	}
 		    	y++;
 			}
+			
+			g2.drawImage(Image.PLAYER.getImg(), ((state.boardColsNum - 3) / 2) * Image.TILEGRASS.getWidth() + (int) (.05 * Image.TILEGRASS.getWidth()), ((state.boardRowsNum - 3) / 2) * Image.TILEGRASS.getHeight() + (int) (.05 * Image.TILEGRASS.getHeight()), null);
     	}
 	}
 	
@@ -187,10 +186,10 @@ public class Game extends JPanel implements ActionListener, MouseListener {
 		int q = 0;
 		BufferedImage img = Image.TILEGRASS.getImg();
 		state.tiles = new ArrayList<ArrayList<BoardTile>>();
-		for(int y = 0; y < state.boardRowsNum; y++) {
+		for(int y = 0; y < state.boardRowsNum + 2; y++) {
 			state.tiles.add(new ArrayList<BoardTile>());
-			for(int x = 0; x < state.boardColsNum; x++){
-				state.tiles.get(y).add(new BoardTile(x*img.getWidth(), y*img.getHeight()));
+			for(int x = 0; x < state.boardColsNum + 2; x++){
+				state.tiles.get(y).add(new BoardTile((x - 1)*img.getWidth(), (y - 1)*img.getHeight()));
 				q++;
 			}
 		}

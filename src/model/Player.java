@@ -13,11 +13,18 @@ import java.util.Iterator;
 import java.util.Scanner;
 import java.util.Stack;
 
+import view.Image;
+
 public class Player {
 	private String username;
 	private String password;
 	private int xLoc;
 	private int yLoc;
+	private int xOff = 0;
+	private int yOff = 0;
+	private int xDir = 0;
+	private int yDir = 0;
+	private int movSize = 16;
 	private int[] inventory = new int[28];
 	private ArrayList<Node> path;
 	private int[] target;
@@ -341,15 +348,44 @@ public class Player {
 		}
 	}
 	
+	private void findDir() {Node n = path.get(path.size() - 1);
+		int x = this.xLoc - n.getX();
+		int y = this.yLoc - n.getY();
+		if (x != 0) {
+			this.xDir = x / Math.abs(x);
+		}
+		if (y != 0) {
+			this.yDir = y / Math.abs(y);
+		}
+	}
+	
 	private boolean checkAdjacency(int[] t) {
 		return (Math.abs(Math.abs(t[0] - xLoc) + Math.abs(t[1] - yLoc)) == 1);
 	}
 	
 	public void move() {
 		if (path.size() > 0) {
-			this.xLoc = path.get(path.size() - 1).getX();
-			this.yLoc = path.get(path.size() - 1).getY();
-			path.remove(path.size() - 1);
+			findDir();
+			if ((Math.abs(this.xOff) != Image.TILEGRASS.getWidth()) && (Math.abs(this.yOff) != Image.TILEGRASS.getHeight()) && (Math.abs(this.xDir) == Math.abs(this.yDir)))  {
+				this.xOff += (Image.TILEGRASS.getWidth() * this.xDir) / this.movSize;
+				this.yOff += (Image.TILEGRASS.getHeight() * this.yDir) / this.movSize;
+				System.out.println("a");
+			} else if ((Math.abs(this.xOff) != Image.TILEGRASS.getWidth()) && (this.xDir != 0)) {
+				this.xOff += (Image.TILEGRASS.getWidth() * this.xDir) / this.movSize;
+				System.out.println("b");
+			} else if ((Math.abs(this.yOff) != Image.TILEGRASS.getHeight()) && (this.yDir != 0)) {
+				this.yOff += (Image.TILEGRASS.getHeight() * this.yDir) / this.movSize;
+				System.out.println("c");
+			} else {
+				this.xLoc = path.get(path.size() - 1).getX();
+				this.yLoc = path.get(path.size() - 1).getY();
+				path.remove(path.size() - 1);
+				this.xOff = 0;
+				this.yOff = 0;
+				this.xDir = 0;
+				this.yDir = 0;
+				System.out.println("d");
+			}
 		} else if (target != null) {
 			if (checkAdjacency(target)) {
 				state.tiles.get(target[0]).get(target[1]).getObj().start();
@@ -379,6 +415,14 @@ public class Player {
 	
 	public int getYLoc() {
 		return this.yLoc;
+	}
+	
+	public int getXOff() {
+		return this.xOff;
+	}
+	
+	public int getYOff() {
+		return this.yOff;
 	}
 	
 	public void setState(BoardState state) {
