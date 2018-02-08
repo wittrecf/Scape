@@ -1,17 +1,17 @@
 package model;
 
-import view.Image;
+import view.ImageEnum;
 
 public class BoardTile {
 	private int xLoc;
 	private int yLoc;
 	private int xCoord;
 	private int yCoord;
-	private int type;
+	private double type;
 	private TileObject obj;
 
-	private static int width = Image.TILEGRASS.getWidth();
-	private static int height = Image.TILEGRASS.getHeight();
+	private static int width = ImageEnum.TILEGRASS.getWidth();
+	private static int height = ImageEnum.TILEGRASS.getHeight();
 	
 	public BoardTile(int xLoc, int yLoc){
 		this.xLoc = xLoc;
@@ -42,12 +42,12 @@ public class BoardTile {
 		this.yCoord = yCoord;
 	}
 	
-	public int getType() {
+	public double getType() {
 		return type;
 	}
 	
-	public void setType(int type) {
-		this.type = type;
+	public void setType(double mapTiles) {
+		this.type = mapTiles;
 	}
 
 	public static int getWidth() {

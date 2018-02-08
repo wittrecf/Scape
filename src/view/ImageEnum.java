@@ -8,11 +8,13 @@ import javax.imageio.ImageIO;
 
 import view.DrawOps;
 
-public enum Image {
+public enum ImageEnum {
 	
 	PLAYER("player.png"),
 	TILEGRASS("TileGrass.png"),
 	TILESELECTED("TileSelected.png"),
+	ROCKNULL("RockNull.png"),
+	ROCKCLAY("RockClay.png"),
 	EXIT_DEFAULT("btn_default.png");
 	
 	private BufferedImage origImg, scaledImg;
@@ -25,7 +27,7 @@ public enum Image {
 	 * 
 	 * @param filename The name of the image within the directory
 	 */
-	Image(String filename) {
+	ImageEnum(String filename) {
 		filePath = directory + filename;
 		try {
 			origImg = ImageIO.read(new File(filePath));

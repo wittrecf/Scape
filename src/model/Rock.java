@@ -1,35 +1,50 @@
 package model;
 
-import view.Image;
+import java.awt.image.BufferedImage;
+
+import view.ImageEnum;
 
 public enum Rock {
-    CLAY (10, 20, 10, 10);
+	NULLCLAY (10, 10, 20, 10, .0025, ImageEnum.ROCKNULL),
+    CLAY (11, 10, 20, 10, .0025, ImageEnum.ROCKCLAY);
 
+	private int rockId;
     private int level;
     private double xp;
     private int oreId;
-    private int baseTime;
+    private double respawnRate;
+    private ImageEnum img;
     
-    Rock(int level, double xp, int oreId, int baseTime) {
+    Rock(int rockId, int level, double xp, int oreId, double respawnRate, ImageEnum img) {
+    	this.rockId = rockId;
         this.level = level;
         this.xp = xp;
         this.oreId = oreId;
-        this.baseTime = baseTime;
+        this.respawnRate = respawnRate;
+        this.img = img;
     }
 
 	public int getLevel() {
-		return level;
+		return this.level;
 	}
 
 	public double getXp() {
-		return xp;
+		return this.xp;
 	}
 
 	public int getOreId() {
-		return oreId;
+		return this.oreId;
 	}
 
-	public int getBaseTime() {
-		return baseTime;
+	public double getRespawnRate() {
+		return this.respawnRate;
+	}
+	
+	public ImageEnum getImg() {
+		return this.img;
+	}
+	
+	public int getRockId() {
+		return this.rockId;
 	}
 }

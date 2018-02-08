@@ -26,7 +26,7 @@ public class ExitButtonUI extends BasicButtonUI implements Serializable, MouseLi
 	@Override
 	public void installUI(JComponent c) {
 	    super.installUI(c);
-	    default_img = Image.EXIT_DEFAULT.getImg();
+	    default_img = ImageEnum.EXIT_DEFAULT.getImg();
 	    currImg = default_img;
 
 	    c.addMouseListener(this);

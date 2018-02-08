@@ -36,6 +36,7 @@ import controller.MainController;
 import model.Board;
 import model.BoardState;
 import model.BoardTile;
+import model.MiningRock;
 import model.Player;
 
 public class Game extends JPanel implements ActionListener, MouseListener {
@@ -91,7 +92,7 @@ public class Game extends JPanel implements ActionListener, MouseListener {
     	
 		scaleScreenItems();
 		
-		btnExit.setPreferredSize(new Dimension(Image.TILEGRASS.getWidth()*2, Image.TILEGRASS.getHeight()));
+		btnExit.setPreferredSize(new Dimension(ImageEnum.TILEGRASS.getWidth()*2, ImageEnum.TILEGRASS.getHeight()));
 		btnExit.setBackground(Color.WHITE);
 		btnExit.setForeground(Color.BLACK);
 		btnExit.setFont(new Font("TimesRoman", Font.BOLD, 20));
@@ -108,8 +109,8 @@ public class Game extends JPanel implements ActionListener, MouseListener {
 		
 		btnExit.addActionListener(this);
 		
-		centerX = ((board.getWidth() - Image.TILEGRASS.getWidth()) / 2) / Image.TILEGRASS.getWidth();
-    	centerY = ((board.getHeight() - Image.TILEGRASS.getHeight()) / 2) / Image.TILEGRASS.getHeight();
+		centerX = ((board.getWidth() - ImageEnum.TILEGRASS.getWidth()) / 2) / ImageEnum.TILEGRASS.getWidth();
+    	centerY = ((board.getHeight() - ImageEnum.TILEGRASS.getHeight()) / 2) / ImageEnum.TILEGRASS.getHeight();
     	System.out.println("CENTER: " + centerX + ", " + centerY);
 		
 		this.addMouseListener(this);
@@ -119,7 +120,7 @@ public class Game extends JPanel implements ActionListener, MouseListener {
 		
 		gameOver = false;
 		
-		createShoreline();
+		createBoard();
     	
 		timer = new Timer();
 		timer.scheduleAtFixedRate(new GameTimer(this, board, state), 0, 10);
@@ -163,28 +164,38 @@ public class Game extends JPanel implements ActionListener, MouseListener {
 		    		block.setXCoord(x);
 		    		block.setYCoord(y);
 		    		block.setType(state.mapTiles[x][y]);
+		    		if (block.getType() >= 10 && block.getType() <= 50) {
+		    			block.setObj(new MiningRock(x, y, block.getType()));
+		    		} else {
+		    			block.setObj(null);
+		    		}
 		    		if (block.getType() == 1) {
-		    			g2.drawImage(Image.TILEGRASS.getImg(), block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), null);
+		    			g2.drawImage(ImageEnum.TILEGRASS.getImg(), block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), null);
 		    		} else if (block.getType() == 3) {
-		    			g2.drawImage(Image.TILESELECTED.getImg(), block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), null);
+		    			g2.drawImage(ImageEnum.TILESELECTED.getImg(), block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), null);
+		    		}
+		    		if (block.getObj() != null) {
+		    			if (block.getObj().getType().equals("MiningRock")) {
+		    				g2.drawImage(((MiningRock) block.getObj()).getRockType().getImg().getImg(), block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), null);
+		    			}
 		    		}
 			    	g2.setColor(Color.WHITE);
 		    		g2.setFont(new Font("TimesRoman", Font.PLAIN, (int)(0.35*fontSize)));
-		    		//g2.drawString(block.getXLoc() / Image.TILEGRASS.getWidth() + ":" + block.getYLoc() / Image.TILEGRASS.getHeight(), block.getXLoc() + 15, block.getYLoc() + 15);
+		    		g2.drawString(block.getXLoc() / ImageEnum.TILEGRASS.getWidth() + ":" + block.getYLoc() / ImageEnum.TILEGRASS.getHeight(), block.getXLoc() + 15 + player.getXOff(), block.getYLoc() + 15 + player.getYOff());
 		    		g2.setColor(Color.YELLOW);
-		    		//g2.drawString(block.getXCoord() + ":" + block.getYCoord(), block.getXLoc() + 15, block.getYLoc() + 40);
+		    		g2.drawString(block.getXCoord() + ":" + block.getYCoord(), block.getXLoc() + 15 + player.getXOff(), block.getYLoc() + 40 + player.getYOff());
 					x++;
 		    	}
 		    	y++;
 			}
 			
-			g2.drawImage(Image.PLAYER.getImg(), ((state.boardColsNum - 3) / 2) * Image.TILEGRASS.getWidth() + (int) (.05 * Image.TILEGRASS.getWidth()), ((state.boardRowsNum - 3) / 2) * Image.TILEGRASS.getHeight() + (int) (.05 * Image.TILEGRASS.getHeight()), null);
+			g2.drawImage(ImageEnum.PLAYER.getImg(), ((state.boardColsNum - 3) / 2) * ImageEnum.TILEGRASS.getWidth() + (int) (.05 * ImageEnum.TILEGRASS.getWidth()), ((state.boardRowsNum - 3) / 2) * ImageEnum.TILEGRASS.getHeight() + (int) (.05 * ImageEnum.TILEGRASS.getHeight()), null);
     	}
 	}
 	
-	public void createShoreline() {
+	public void createBoard() {
 		int q = 0;
-		BufferedImage img = Image.TILEGRASS.getImg();
+		BufferedImage img = ImageEnum.TILEGRASS.getImg();
 		state.tiles = new ArrayList<ArrayList<BoardTile>>();
 		for(int y = 0; y < state.boardRowsNum + 2; y++) {
 			state.tiles.add(new ArrayList<BoardTile>());
@@ -210,37 +221,31 @@ public class Game extends JPanel implements ActionListener, MouseListener {
 	    inFile.close();
 	    
 	    x = 0;
-	    state.mapTiles = new int[state.mapColsNum][state.mapRowsNum];
+	    state.mapTiles = new double[state.mapColsNum][state.mapRowsNum];
     	for (int j = 0; j < state.mapRowsNum; j++) {
     		for (int i = 0; i < state.mapColsNum; i++) {
     			state.mapTiles[i][j] = tempArr.get(x);
-    			if ((i == 46) && (j == 50)) {
-    				state.mapTiles[i][j] = 0;
-    			}
-    			if ((i == 46) && (j == 51)) {
-    				state.mapTiles[i][j] = 0;
-    			}
-    			if ((i == 46) && (j == 49)) {
-    				state.mapTiles[i][j] = 0;
-    			}
     			x++;
     		}
     	}
 	  }
 	
 	/**
-	 * Scales image files based on the size of the screen the game is being played on.
+	 * Scales ImageEnum files based on the size of the screen the game is being played on.
 	 */
 	private void scaleScreenItems() {
 		int worldWidth = board.getWidth();
 		
 		int newTileWidth = worldWidth/state.boardColsNum;
-		double scaleFactor = (double) newTileWidth/Image.TILEGRASS.getWidth();
+		double scaleFactor = (double) newTileWidth/ImageEnum.TILEGRASS.getWidth();
 		
-		Image.TILEGRASS.scaleByFactor(scaleFactor);
-		Image.TILESELECTED.scaleByFactor(scaleFactor);
+		ImageEnum.TILEGRASS.scaleByFactor(scaleFactor);
+		ImageEnum.TILESELECTED.scaleByFactor(scaleFactor);
 		
-		Image.PLAYER.scaleByFactor(scaleFactor);
+		ImageEnum.ROCKNULL.scaleByFactor(scaleFactor);
+		ImageEnum.ROCKCLAY.scaleByFactor(scaleFactor);
+		
+		ImageEnum.PLAYER.scaleByFactor(scaleFactor);
 	}
 	
 	public void actionPerformed(ActionEvent event) {
@@ -252,7 +257,7 @@ public class Game extends JPanel implements ActionListener, MouseListener {
 	public void mouseClicked(MouseEvent event) {
 		System.out.println("click");
 		int[] tmp = CollisionDetection.checkCollisionsTile(event.getX(), event.getY(), state.tiles);
-		player.moveTo(tmp[0], tmp[1], tmp[2] == 1);
+		player.moveTo(tmp[0], tmp[1], tmp[2] == 1, tmp[3], tmp[4]);
 	}
 
 	public void mouseEntered(MouseEvent e) {}

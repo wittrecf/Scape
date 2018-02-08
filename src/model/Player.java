@@ -13,7 +13,7 @@ import java.util.Iterator;
 import java.util.Scanner;
 import java.util.Stack;
 
-import view.Image;
+import view.ImageEnum;
 
 public class Player {
 	private String username;
@@ -316,11 +316,15 @@ public class Player {
 		return close;
 	}
 	
-	public void moveTo(int x, int y, boolean isTarget) {
+	public void moveTo(int x, int y, boolean isTarget, int xSet, int ySet) {
 		if (isTarget) {
-			this.target = new int[2];
+			this.target = new int[4];
 			this.target[0] = x;
 			this.target[1] = y;
+			this.target[2] = xSet;
+			this.target[3] = ySet;
+		} else {
+			this.target = null;
 		}
 		if (path.size() > 0) {
 			path = new ArrayList<Node>();
@@ -360,21 +364,21 @@ public class Player {
 	}
 	
 	private boolean checkAdjacency(int[] t) {
-		return (Math.abs(Math.abs(t[0] - xLoc) + Math.abs(t[1] - yLoc)) == 1);
+		return ((Math.abs(Math.abs(t[0] - xLoc) + Math.abs(t[1] - yLoc)) == 1));
 	}
 	
 	public void move() {
 		if (path.size() > 0) {
 			findDir();
-			if ((Math.abs(this.xOff) != Image.TILEGRASS.getWidth()) && (Math.abs(this.yOff) != Image.TILEGRASS.getHeight()) && (Math.abs(this.xDir) == Math.abs(this.yDir)))  {
-				this.xOff += (Image.TILEGRASS.getWidth() * this.xDir) / this.movSize;
-				this.yOff += (Image.TILEGRASS.getHeight() * this.yDir) / this.movSize;
+			if ((Math.abs(this.xOff) != ImageEnum.TILEGRASS.getWidth()) && (Math.abs(this.yOff) != ImageEnum.TILEGRASS.getHeight()) && (Math.abs(this.xDir) == Math.abs(this.yDir)))  {
+				this.xOff += (ImageEnum.TILEGRASS.getWidth() * this.xDir) / this.movSize;
+				this.yOff += (ImageEnum.TILEGRASS.getHeight() * this.yDir) / this.movSize;
 				System.out.println("a");
-			} else if ((Math.abs(this.xOff) != Image.TILEGRASS.getWidth()) && (this.xDir != 0)) {
-				this.xOff += (Image.TILEGRASS.getWidth() * this.xDir) / this.movSize;
+			} else if ((Math.abs(this.xOff) != ImageEnum.TILEGRASS.getWidth()) && (this.xDir != 0)) {
+				this.xOff += (ImageEnum.TILEGRASS.getWidth() * this.xDir) / this.movSize;
 				System.out.println("b");
-			} else if ((Math.abs(this.yOff) != Image.TILEGRASS.getHeight()) && (this.yDir != 0)) {
-				this.yOff += (Image.TILEGRASS.getHeight() * this.yDir) / this.movSize;
+			} else if ((Math.abs(this.yOff) != ImageEnum.TILEGRASS.getHeight()) && (this.yDir != 0)) {
+				this.yOff += (ImageEnum.TILEGRASS.getHeight() * this.yDir) / this.movSize;
 				System.out.println("c");
 			} else {
 				this.xLoc = path.get(path.size() - 1).getX();
@@ -382,13 +386,25 @@ public class Player {
 				path.remove(path.size() - 1);
 				this.xOff = 0;
 				this.yOff = 0;
+				if (target != null) {
+					target[2] += xDir * ImageEnum.TILEGRASS.getHeight();
+					target[3] += yDir * ImageEnum.TILEGRASS.getWidth();
+				}
 				this.xDir = 0;
 				this.yDir = 0;
 				System.out.println("d");
 			}
 		} else if (target != null) {
 			if (checkAdjacency(target)) {
-				state.tiles.get(target[0]).get(target[1]).getObj().start();
+				System.out.println("mm: " + (target[3]/ImageEnum.TILEGRASS.getWidth()) + " " + (target[2]/ImageEnum.TILEGRASS.getHeight()));
+				if (state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().getType().equals("MiningRock")
+					&& ((MiningRock) state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj()).getRockType().getRockId() % 2 != 0) {
+					System.out.println("adj");
+					state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().start(state);
+				} else {
+					path.clear();
+					target = null;
+				}
 			}
 		}
 	}
