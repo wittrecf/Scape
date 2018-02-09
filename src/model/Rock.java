@@ -5,8 +5,8 @@ import java.awt.image.BufferedImage;
 import view.ImageEnum;
 
 public enum Rock {
-	NULLCLAY (10, 10, 20, 10, .0025, ImageEnum.ROCKNULL),
-    CLAY (11, 10, 20, 10, .0025, ImageEnum.ROCKCLAY);
+	NULLCLAY (10, 10, 20, 10, 1.0/400.0, ImageEnum.ROCKNULL),
+    CLAY (11, 10, 20, 10, 1.0/400.0, ImageEnum.ROCKCLAY);
 
 	private int rockId;
     private int level;

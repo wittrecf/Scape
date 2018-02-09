@@ -18,6 +18,7 @@ import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -36,7 +37,8 @@ import controller.MainController;
 import model.Board;
 import model.BoardState;
 import model.BoardTile;
-import model.MiningRock;
+import model.TileRock;
+import model.TileTree;
 import model.Player;
 
 public class Game extends JPanel implements ActionListener, MouseListener {
@@ -127,8 +129,10 @@ public class Game extends JPanel implements ActionListener, MouseListener {
 	}
 
 	public void shutdown() {
+		player.clearPrevPath();
 		try {
 			player.writePlayerData();
+			writeMapArray();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (UnsupportedEncodingException e) {
@@ -164,8 +168,10 @@ public class Game extends JPanel implements ActionListener, MouseListener {
 		    		block.setXCoord(x);
 		    		block.setYCoord(y);
 		    		block.setType(state.mapTiles[x][y]);
-		    		if (block.getType() >= 10 && block.getType() <= 50) {
-		    			block.setObj(new MiningRock(x, y, block.getType()));
+		    		if (block.getType() >= 10 && block.getType() < 50) {
+		    			block.setObj(new TileRock(x, y, block.getType()));
+		    		} else if (block.getType() >= 50 && block.getType() < 90) {
+		    			block.setObj(new TileTree(x, y, block.getType()));
 		    		} else {
 		    			block.setObj(null);
 		    		}
@@ -175,8 +181,10 @@ public class Game extends JPanel implements ActionListener, MouseListener {
 		    			g2.drawImage(ImageEnum.TILESELECTED.getImg(), block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), null);
 		    		}
 		    		if (block.getObj() != null) {
-		    			if (block.getObj().getType().equals("MiningRock")) {
-		    				g2.drawImage(((MiningRock) block.getObj()).getRockType().getImg().getImg(), block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), null);
+		    			if (block.getObj().getType().equals("TileRock")) {
+		    				g2.drawImage(((TileRock) block.getObj()).getRockType().getImg().getImg(), block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), null);
+		    			} else if (block.getObj().getType().equals("TileTree")) {
+		    				g2.drawImage(((TileTree) block.getObj()).getTreeType().getImg().getImg(), block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), null);
 		    			}
 		    		}
 			    	g2.setColor(Color.WHITE);
@@ -210,11 +218,11 @@ public class Game extends JPanel implements ActionListener, MouseListener {
 	private void readMapArray() throws FileNotFoundException {
 		Scanner inFile = new Scanner(new File(arrayFile));
 		
-	    ArrayList<Integer> tempArr = new ArrayList<Integer>();
+	    ArrayList<Double> tempArr = new ArrayList<Double>();
 	    
 	    int x = 0;
 	    while (inFile.hasNext()) {
-	    	tempArr.add(inFile.nextInt());
+	    	tempArr.add(inFile.nextDouble());
 	    	x++;
 	    }
 	    
@@ -229,6 +237,18 @@ public class Game extends JPanel implements ActionListener, MouseListener {
     		}
     	}
 	  }
+	
+	private void writeMapArray() throws FileNotFoundException, UnsupportedEncodingException {
+		PrintWriter writer = new PrintWriter(arrayFile, "UTF-8");
+		
+		for (int j = 0; j < state.mapRowsNum; j++) {
+    		for (int i = 0; i < state.mapColsNum; i++) {
+    			writer.print(state.mapTiles[i][j] + " ");
+    		}
+    		writer.println();
+    	}
+		writer.close();
+	}
 	
 	/**
 	 * Scales ImageEnum files based on the size of the screen the game is being played on.

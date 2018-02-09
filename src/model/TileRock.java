@@ -1,16 +1,18 @@
 package model;
 
-public class MiningRock extends TileObject {
+public class TileRock extends TileObject {
 	private Rock rockType;
 	private int oldType;
 	private double time;
 	
-	public MiningRock(int x, int y, double type) {
+	public TileRock(int x, int y, double type) {
 		setXYLoc(x, y);
 		this.time = type - Math.floor(type);
 		this.oldType = (int) Math.floor(type);
 		this.rockType = pickRock(oldType);
-		this.setType("MiningRock");
+		this.setType("TileRock");
+		depleted = "This rock has no ore left.";
+		started = "Mining...";
 	}
 	
 	public static Rock pickRock(int type) {
@@ -21,11 +23,14 @@ public class MiningRock extends TileObject {
 		}
 	}
 	
-	public void start(BoardState state) {
+	public boolean start(BoardState state) {
 		if (this.rockType.getRockId() % 2 == 1) {
-			this.deplete(state);
+			if (true) {
+				this.deplete(state);
+			}
+			return true;
 		} else {
-			System.out.println("rock is depleted");
+			return false;
 		}
 	}
 	

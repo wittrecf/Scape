@@ -15,6 +15,8 @@ public enum ImageEnum {
 	TILESELECTED("TileSelected.png"),
 	ROCKNULL("RockNull.png"),
 	ROCKCLAY("RockClay.png"),
+	TREENULL("TreeNull.png"),
+	TREEOAK("TreeOak.png"),
 	EXIT_DEFAULT("btn_default.png");
 	
 	private BufferedImage origImg, scaledImg;

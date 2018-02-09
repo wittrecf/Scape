@@ -5,8 +5,9 @@ import java.util.TimerTask;
 
 import model.Board;
 import model.BoardState;
-import model.MiningRock;
 import model.Player;
+import model.TileRock;
+import model.TileTree;
 import view.Game;
 
 public class GameTimer extends TimerTask {
@@ -36,8 +37,10 @@ public class GameTimer extends TimerTask {
 		
 		for (int j = 0; j < state.mapRowsNum; j++) {
     		for (int i = 0; i < state.mapColsNum; i++) {
-    			if (state.mapTiles[i][j] >= 10 && state.mapTiles[i][j] <= 50 && state.mapTiles[i][j] % 2 != 1) {
-    				state.mapTiles[i][j] += MiningRock.pickRock((int) Math.floor(state.mapTiles[i][j])).getRespawnRate();
+    			if (state.mapTiles[i][j] >= 10 && state.mapTiles[i][j] < 50 && state.mapTiles[i][j] % 2 != 1) {
+    				state.mapTiles[i][j] = (double)Math.round((state.mapTiles[i][j] + (TileRock.pickRock((int) Math.floor(state.mapTiles[i][j])).getRespawnRate())) * 1000000d) / 1000000d;
+    			} else if (state.mapTiles[i][j] >= 50 && state.mapTiles[i][j] < 90 && state.mapTiles[i][j] % 2 != 1) {
+    				state.mapTiles[i][j] = (double)Math.round((state.mapTiles[i][j] + (TileTree.pickTree((int) Math.floor(state.mapTiles[i][j])).getRespawnRate())) * 1000000d) / 1000000d;
     			}
     		}
 		}

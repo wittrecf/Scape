@@ -29,6 +29,7 @@ public class Player {
 	private ArrayList<Node> path;
 	private int[] target;
 	private BoardState state;
+	private boolean transfer = false;
 	
 	private int[][] dir = {{1, 1},
 			   			   {1, -1},
@@ -199,20 +200,24 @@ public class Player {
 		Node[][] arr = new Node[(int) (2*len + 1)][(int) (2*len + 1)];
 		ArrayList<Node> list = new ArrayList<Node>();
 		Node n;
-		//System.out.println("i spans from " + (this.getXLoc() - len) + " to " + (this.getXLoc() + len));
-		//System.out.println("j spans from " + (this.getYLoc() - len) + " to " + (this.getYLoc() + len));
-		for (int i = this.getXLoc() - len; i <= this.getXLoc() + len; i++) {
-			for (int j = this.getYLoc() - len; j <= this.getYLoc() + len; j++) {
+		int tmpX = this.getXLoc() - xDir;
+		int tmpY = this.getYLoc() - yDir;
+		//System.out.println("i spans from " + (tmpX - len) + " to " + (this.getXLoc() + len));
+		//System.out.println("j spans from " + (tmpY - len) + " to " + (tmpY + len));
+		for (int i = tmpX - len; i <= tmpX + len; i++) {
+			for (int j = tmpY - len; j <= tmpY + len; j++) {
 				if (!((i < 0) || (i >= state.mapColsNum) || (j < 0) || (j >= state.mapRowsNum))) {
 					if (state.mapTiles[i][j] == 1) {
 						n = new Node(i, j);
-						if ((i == this.getXLoc()) && (j == this.getYLoc())) {
+						if ((i == tmpX) && (j == tmpY)) {
+							//System.out.println("zero node at " + i + ", " + j);
+							//System.out.println("xDir: " + xDir + ", yDir: " + yDir);
 							n.setDist(0);
 						}
 					} else {
 						n = null;
 					}
-					arr[i - (this.getXLoc() - len)][j - (this.getYLoc() - len)] = n;
+					arr[i - (tmpX - len)][j - (tmpY - len)] = n;
 				}
 			}
 		}
@@ -228,11 +233,11 @@ public class Player {
 						x = n1.getX() + dir[i][0];
 						y = n1.getY() + dir[i][1];
 						//System.out.println(x + " / " + y);
-						if ((x - (this.getXLoc() - len) >= 0) && (x - (this.getXLoc() - len) < 2*len) &&
-							(y - (this.getYLoc() - len) >= 0) && (y - (this.getYLoc() - len) < 2*len) &&
-							!(arr[x - (this.getXLoc() - len)][y - (this.getYLoc() - len)] == null)) {
-							n1.addConnection(arr[x - (this.getXLoc() - len)][y - (this.getYLoc() - len)]);
-							//System.out.println("adding connection from " + n1.getX() + ", " + n1.getY() + " and " + arr[x - (this.getXLoc() - len)][y - (this.getYLoc() - len)].getX() + ", " + arr[x - (this.getXLoc() - len)][y - (this.getYLoc() - len)].getY());
+						if ((x - (tmpX - len) >= 0) && (x - (tmpX - len) < 2*len) &&
+							(y - (tmpY - len) >= 0) && (y - (tmpY - len) < 2*len) &&
+							!(arr[x - (tmpX - len)][y - (tmpY - len)] == null)) {
+							n1.addConnection(arr[x - (tmpX - len)][y - (tmpY - len)]);
+							//System.out.println("adding connection from " + n1.getX() + ", " + n1.getY() + " and " + arr[x - (tmpX - len)][y - (tmpY - len)].getX() + ", " + arr[x - (tmpX - len)][y - (tmpY - len)].getY());
 
 						}
 					}
@@ -264,6 +269,7 @@ public class Player {
 		int length = 20;
 		
 		//System.out.println("chunk 1 done");
+		//System.out.println("finding path to " + x + ", " + y);
 		
 		ArrayList<Node> list = createNodeMap(length);
 		Node min;
@@ -316,7 +322,18 @@ public class Player {
 		return close;
 	}
 	
+	public void clearPrevPath() {
+		for (int j = 0; j < state.mapRowsNum; j++) {
+    		for (int i = 0; i < state.mapColsNum; i++) {
+				if (state.mapTiles[i][j] == 3) {
+					state.mapTiles[i][j] = 1;
+				}
+			}
+		}
+	}
+	
 	public void moveTo(int x, int y, boolean isTarget, int xSet, int ySet) {
+		Node tmp = null;
 		if (isTarget) {
 			this.target = new int[4];
 			this.target[0] = x;
@@ -327,15 +344,13 @@ public class Player {
 			this.target = null;
 		}
 		if (path.size() > 0) {
+			if ((Math.abs(this.xOff) != ImageEnum.TILEGRASS.getWidth()) || (Math.abs(this.yOff) != ImageEnum.TILEGRASS.getHeight())) {
+				//System.out.println("bleh");
+				tmp = path.get(path.size() - 1);
+			}
 			path = new ArrayList<Node>();
 		}
-		for (int j = 0; j < state.mapRowsNum; j++) {
-    		for (int i = 0; i < state.mapColsNum; i++) {
-				if (state.mapTiles[i][j] == 3) {
-					state.mapTiles[i][j] = 1;
-				}
-			}
-		}
+		clearPrevPath();
 		Node n = findPath(x, y);
 		while (true) {
 			//System.out.println(n.getX() + ", " + n.getY());
@@ -346,6 +361,9 @@ public class Player {
 					path.add(n);
 					n = n.getPrev();
 				} else {
+					if (tmp != null) {
+						path.add(tmp);
+					}
 					break;
 				}
 			}
@@ -373,13 +391,13 @@ public class Player {
 			if ((Math.abs(this.xOff) != ImageEnum.TILEGRASS.getWidth()) && (Math.abs(this.yOff) != ImageEnum.TILEGRASS.getHeight()) && (Math.abs(this.xDir) == Math.abs(this.yDir)))  {
 				this.xOff += (ImageEnum.TILEGRASS.getWidth() * this.xDir) / this.movSize;
 				this.yOff += (ImageEnum.TILEGRASS.getHeight() * this.yDir) / this.movSize;
-				System.out.println("a");
+				//System.out.println("a");
 			} else if ((Math.abs(this.xOff) != ImageEnum.TILEGRASS.getWidth()) && (this.xDir != 0)) {
 				this.xOff += (ImageEnum.TILEGRASS.getWidth() * this.xDir) / this.movSize;
-				System.out.println("b");
+				//System.out.println("b");
 			} else if ((Math.abs(this.yOff) != ImageEnum.TILEGRASS.getHeight()) && (this.yDir != 0)) {
 				this.yOff += (ImageEnum.TILEGRASS.getHeight() * this.yDir) / this.movSize;
-				System.out.println("c");
+				//System.out.println("c");
 			} else {
 				this.xLoc = path.get(path.size() - 1).getX();
 				this.yLoc = path.get(path.size() - 1).getY();
@@ -392,19 +410,27 @@ public class Player {
 				}
 				this.xDir = 0;
 				this.yDir = 0;
-				System.out.println("d");
+				//System.out.println("d");
+				//System.out.println("moved to " + xLoc + ", " + yLoc);
 			}
 		} else if (target != null) {
 			if (checkAdjacency(target)) {
-				System.out.println("mm: " + (target[3]/ImageEnum.TILEGRASS.getWidth()) + " " + (target[2]/ImageEnum.TILEGRASS.getHeight()));
-				if (state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().getType().equals("MiningRock")
-					&& ((MiningRock) state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj()).getRockType().getRockId() % 2 != 0) {
-					System.out.println("adj");
-					state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().start(state);
+				if (state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().start(state)) {
+					System.out.println(state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().getStarted());
 				} else {
+					System.out.println(state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().getDepleted());
 					path.clear();
 					target = null;
 				}
+				/*if (state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().getType().equals("MiningRock")
+					&& ((MiningRock) state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj()).getRockType().getRockId() % 2 != 0) {
+					System.out.println("adj");
+					state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().start(state);
+				} else if (state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().getType().equals("MiningRock")) {
+					System.out.println("Rock is depleted.");
+					path.clear();
+					target = null;
+				}*/
 			}
 		}
 	}
