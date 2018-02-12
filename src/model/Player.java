@@ -359,7 +359,7 @@ public class Player {
 		while (true) {
 			//System.out.println(n.getX() + ", " + n.getY());
 			//System.out.println("dist " + n.getDist());
-			if (n != null) {
+			if ((n != null) && ((path.size() == 0) || (checkAdjacency(new int[] {path.get(path.size() - 1).getX(), path.get(path.size() - 1).getY()}, new int[] {n.getX(), n.getY()})))) {
 				state.mapTiles[n.getX()][n.getY()] = 3;
 				if (n.getPrev() != null) {
 					path.add(n);
@@ -385,8 +385,8 @@ public class Player {
 		}
 	}
 	
-	private boolean checkAdjacency(int[] t) {
-		return ((Math.abs(Math.abs(t[0] - xLoc) + Math.abs(t[1] - yLoc)) == 1));
+	private boolean checkAdjacency(int[] t1, int[] t2) {
+		return ((Math.abs(Math.abs(t2[0] - t1[0]) + Math.abs(t2[1] - t1[1])) == 1));
 	}
 	
 	private void addXP(String type, int xp) {
@@ -426,7 +426,7 @@ public class Player {
 				//System.out.println("moved to " + xLoc + ", " + yLoc);
 			}
 		} else if (target != null) {
-			if (checkAdjacency(target)) {
+			if (checkAdjacency(new int[] {xLoc, yLoc}, target)) {
 				if (this.inv.searchInventorySpace()) {
 					System.out.println(state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().getStarted());
 					int[] tmp = state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().start(state);
