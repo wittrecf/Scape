@@ -25,11 +25,13 @@ public class Player {
 	private int xDir = 0;
 	private int yDir = 0;
 	private int movSize = 16;
-	private int[] inventory = new int[28];
 	private ArrayList<Node> path;
 	private int[] target;
 	private BoardState state;
 	private boolean transfer = false;
+	private Inventory inv;
+	
+	private int[] statXP = new int[2];
 	
 	private int[][] dir = {{1, 1},
 			   			   {1, -1},
@@ -46,21 +48,16 @@ public class Player {
 	
 	private final int DEFAULTX = 50;
 	private final int DEFAULTY = 50;
-	private final int[] DEFAULT_INVENTORY = {-1, -1, -1, -1,
-											-1, -1, -1, -1,
-											-1, -1, -1, -1,
-											-1, -1, -1, -1,
-											-1, -1, -1, -1,
-											-1, -1, -1, -1,
-											-1, -1, -1, -1};
-	private final static int INVENTORY_SIZE = 28;
 	
-	public Player(String user) {
+	public Player(String user, int width, int height) {
 		makePassword();
 		this.username = user;
 		this.xLoc = DEFAULTX;
 		this.yLoc = DEFAULTY;
-		this.inventory = DEFAULT_INVENTORY;
+		this.inv = new Inventory(width, height);
+		inv.setDefaultInventory();
+		this.statXP[0] = 0;
+		this.statXP[1] = 0;
 		this.path = new ArrayList<Node>();
 		try {
 			writePlayerData();
@@ -70,13 +67,17 @@ public class Player {
 		}
 	}
 	
-	private Player(String[] arr) {
+	private Player(String[] arr, int width, int height) {
 		this.username = arr[0];
 		this.password = arr[1];
 		this.xLoc = Integer.parseInt(arr[2]);
 		this.yLoc = Integer.parseInt(arr[3]);
-		for (int i = 1; i <= Player.INVENTORY_SIZE; i++) {
-			this.inventory[i - 1] = Integer.parseInt(arr[3 + i]);
+		this.inv = new Inventory(width, height);
+		for (int i = 0; i < Inventory.getInventorySize(); i++) {
+			this.inv.setSlot(i, Integer.parseInt(arr[4 + i]));
+		}
+		for (int j = 0; j < 2; j++) {
+			this.statXP[j] = Integer.parseInt(arr[4 + Inventory.getInventorySize() + j]);
 		}
 		this.target = null;
 		this.path = new ArrayList<Node>();
@@ -151,9 +152,9 @@ public class Player {
 		writer.close();
 	}
 	
-	public static Player loadPlayer(String user) throws FileNotFoundException, UnsupportedEncodingException {
+	public static Player loadPlayer(String user, int width, int height) throws FileNotFoundException, UnsupportedEncodingException {
 		Scanner inFile = null;
-		String[] playerArr = new String[Player.INVENTORY_SIZE + 4];
+		String[] playerArr = new String[4 + Inventory.getInventorySize() + 2];
 		try {
 			inFile = new Scanner(new File(playerDataFile));
 		} catch (FileNotFoundException e) {
@@ -177,21 +178,24 @@ public class Player {
 				playerArr[1] = arr[1];
 				playerArr[2] = arr[2];
 				playerArr[3] = arr[3];
-				for (int i = 1; i <= Player.INVENTORY_SIZE; i++) {
-					playerArr[3 + i] = arr[3 + i];
+				for (int i = 0; i < Inventory.getInventorySize(); i++) {
+					playerArr[4 + i] = arr[4 + i];
 				}
-				return new Player(playerArr);
+				for (int j = 0; j < 2; j++) {
+					playerArr[4 + Inventory.getInventorySize() + j] = arr[4 + Inventory.getInventorySize() + j];
+				}
+				return new Player(playerArr, width, height);
 			}
 		}
 		return null;
 	}
 	
-	public static Player makeAccount(String user) {
+	public static Player makeAccount(String user, int width, int height) {
 		if (Player.searchUser(user)) {
 			System.out.println("Username already taken.");
 			return null;
 		} else {
-			return new Player(user);
+			return new Player(user, width, height);
 		}
 	}
 	
@@ -385,6 +389,14 @@ public class Player {
 		return ((Math.abs(Math.abs(t[0] - xLoc) + Math.abs(t[1] - yLoc)) == 1));
 	}
 	
+	private void addXP(String type, int xp) {
+		if (type.equals("TileRock")) {
+			statXP[0] += xp;
+		} else if (type.equals("TileTree")) {
+			statXP[1] += xp;
+		}
+	}
+	
 	public void move() {
 		if (path.size() > 0) {
 			findDir();
@@ -415,10 +427,21 @@ public class Player {
 			}
 		} else if (target != null) {
 			if (checkAdjacency(target)) {
-				if (state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().start(state)) {
+				if (this.inv.searchInventorySpace()) {
 					System.out.println(state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().getStarted());
+					int[] tmp = state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().start(state);
+					if (tmp != null) {
+						inv.addItem(tmp[0]);
+						addXP(state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().getType(), tmp[1]);
+						path.clear();
+						target = null;
+					} else {
+						System.out.println(state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().getDepleted());
+						path.clear();
+						target = null;
+					}
 				} else {
-					System.out.println(state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().getDepleted());
+					System.out.println("Your inventory is full.");
 					path.clear();
 					target = null;
 				}
@@ -436,13 +459,16 @@ public class Player {
 	}
 	
 	public int getInventorySlot(int slot) {
-		return inventory[slot];
+		return inv.getSlot(slot);
 	}
 	
 	public String toString() {
 		String s = this.username + " " + this.password + " " + this.xLoc + " " + this.yLoc + " ";
-		for (int i = 0; i < inventory.length; i++) {
-			s += inventory[i] + " ";
+		for (int i = 0; i < Inventory.getInventorySize(); i++) {
+			s += inv.getSlot(i) + " ";
+		}
+		for (int j = 0; j < 2; j++) {
+			s += statXP[j] + " ";
 		}
 		return s;
 	}
@@ -465,6 +491,14 @@ public class Player {
 	
 	public int getYOff() {
 		return this.yOff;
+	}
+	
+	public Inventory getInv() {
+		return this.inv;
+	}
+	
+	public int getStat(int n) {
+		return this.statXP[n];
 	}
 	
 	public void setState(BoardState state) {

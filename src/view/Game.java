@@ -37,6 +37,7 @@ import controller.MainController;
 import model.Board;
 import model.BoardState;
 import model.BoardTile;
+import model.InventoryTile;
 import model.TileRock;
 import model.TileTree;
 import model.Player;
@@ -54,6 +55,9 @@ public class Game extends JPanel implements ActionListener, MouseListener {
 	private int centerX;
 	private int centerY;
 	
+	private int inventoryWidth;
+	private int inventoryHeight;
+	
 	private JButton btnExit = new JButton();
 	private static GridBagLayout layout = new GridBagLayout();
     private static GridBagConstraints c = new GridBagConstraints();
@@ -68,15 +72,22 @@ public class Game extends JPanel implements ActionListener, MouseListener {
     	state = new BoardState();
     	state.board = board;
     	
+    	scaleScreenItems();
+    	
+    	ImageEnum.groupIcons();
+		
+		inventoryWidth = ImageEnum.INVENTORY.getWidth();
+		inventoryHeight = ImageEnum.INVENTORY.getHeight();
+    	
     	try {
-			player = Player.loadPlayer("SourceLink");
+			player = Player.loadPlayer("SourceLink", inventoryWidth, inventoryHeight);
 		} catch (FileNotFoundException e1) {
 			e1.printStackTrace();
 		} catch (UnsupportedEncodingException e1) {
 			e1.printStackTrace();
 		}
     	if (player == null) {
-    		player = Player.makeAccount("SourceLink");
+    		player = Player.makeAccount("SourceLink", inventoryWidth, inventoryHeight);
     	}
     	if (player == null) {
     		this.shutdown();
@@ -91,8 +102,6 @@ public class Game extends JPanel implements ActionListener, MouseListener {
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-    	
-		scaleScreenItems();
 		
 		btnExit.setPreferredSize(new Dimension(ImageEnum.TILEGRASS.getWidth()*2, ImageEnum.TILEGRASS.getHeight()));
 		btnExit.setBackground(Color.WHITE);
@@ -182,23 +191,34 @@ public class Game extends JPanel implements ActionListener, MouseListener {
 		    		}
 		    		if (block.getObj() != null) {
 		    			if (block.getObj().getType().equals("TileRock")) {
-		    				g2.drawImage(((TileRock) block.getObj()).getRockType().getImg().getImg(), block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), null);
+		    				g2.drawImage(((TileRock) block.getObj()).getRockType().getImg(), block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), null);
 		    			} else if (block.getObj().getType().equals("TileTree")) {
-		    				g2.drawImage(((TileTree) block.getObj()).getTreeType().getImg().getImg(), block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), null);
+		    				g2.drawImage(((TileTree) block.getObj()).getTreeType().getImg(), block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), null);
 		    			}
 		    		}
 			    	g2.setColor(Color.WHITE);
 		    		g2.setFont(new Font("TimesRoman", Font.PLAIN, (int)(0.35*fontSize)));
-		    		g2.drawString(block.getXLoc() / ImageEnum.TILEGRASS.getWidth() + ":" + block.getYLoc() / ImageEnum.TILEGRASS.getHeight(), block.getXLoc() + 15 + player.getXOff(), block.getYLoc() + 15 + player.getYOff());
+		    		//g2.drawString(block.getXLoc() / ImageEnum.TILEGRASS.getWidth() + ":" + block.getYLoc() / ImageEnum.TILEGRASS.getHeight(), block.getXLoc() + 15 + player.getXOff(), block.getYLoc() + 15 + player.getYOff());
 		    		g2.setColor(Color.YELLOW);
-		    		g2.drawString(block.getXCoord() + ":" + block.getYCoord(), block.getXLoc() + 15 + player.getXOff(), block.getYLoc() + 40 + player.getYOff());
+		    		//g2.drawString(block.getXCoord() + ":" + block.getYCoord(), block.getXLoc() + 15 + player.getXOff(), block.getYLoc() + 40 + player.getYOff());
 					x++;
 		    	}
 		    	y++;
 			}
 			
 			g2.drawImage(ImageEnum.PLAYER.getImg(), ((state.boardColsNum - 3) / 2) * ImageEnum.TILEGRASS.getWidth() + (int) (.05 * ImageEnum.TILEGRASS.getWidth()), ((state.boardRowsNum - 3) / 2) * ImageEnum.TILEGRASS.getHeight() + (int) (.05 * ImageEnum.TILEGRASS.getHeight()), null);
-    	}
+			g2.drawImage(ImageEnum.INVENTORY.getImg(), board.getWidth() - ImageEnum.INVENTORY.getWidth(), board.getHeight() - ImageEnum.INVENTORY.getHeight(), null);
+			
+			for (InventoryTile i : player.getInv().getInventory()) {
+				g2.drawImage(i.getItemImg(),
+						(int) (board.getWidth() - ImageEnum.INVENTORY.getWidth() + (.06 * ImageEnum.INVENTORY.getWidth()) + (i.getXLoc() * (ImageEnum.ICONBLANK.getWidth() + .04 * ImageEnum.INVENTORY.getWidth()))),
+						(int) (board.getHeight() - ImageEnum.INVENTORY.getHeight() + (.04 * ImageEnum.INVENTORY.getHeight()) + (i.getYLoc() * (ImageEnum.ICONBLANK.getHeight() + .04 * ImageEnum.INVENTORY.getWidth()))),
+						null);
+			}
+			
+			g2.drawString("Mining: " + player.getStat(0), 0, 10);
+			g2.drawString("Woodcutting: " + player.getStat(1), 0, 30);
+		}
 	}
 	
 	public void createBoard() {
@@ -208,8 +228,10 @@ public class Game extends JPanel implements ActionListener, MouseListener {
 		for(int y = 0; y < state.boardRowsNum + 2; y++) {
 			state.tiles.add(new ArrayList<BoardTile>());
 			for(int x = 0; x < state.boardColsNum + 2; x++){
-				state.tiles.get(y).add(new BoardTile((x - 1)*img.getWidth(), (y - 1)*img.getHeight()));
-				q++;
+				if (!(x > state.boardColsNum - 4 + 2) || !(y > state.boardRowsNum - 6 + 2)) {
+					state.tiles.get(y).add(new BoardTile((x - 1)*img.getWidth(), (y - 1)*img.getHeight()));
+					q++;
+				}
 			}
 		}
 		System.out.println(q);
@@ -265,7 +287,19 @@ public class Game extends JPanel implements ActionListener, MouseListener {
 		ImageEnum.ROCKNULL.scaleByFactor(scaleFactor);
 		ImageEnum.ROCKCLAY.scaleByFactor(scaleFactor);
 		
+		ImageEnum.TREENULL.scaleByFactor(scaleFactor);
+		ImageEnum.TREEOAK.scaleByFactor(scaleFactor);
+		
 		ImageEnum.PLAYER.scaleByFactor(scaleFactor);
+		
+		ImageEnum.INVENTORY.scaleByFactor(scaleFactor);
+		
+		ImageEnum.ICONBLANK.scaleByFactor(scaleFactor);
+		ImageEnum.ICONCLAYORE.scaleByFactor(scaleFactor);
+		ImageEnum.ICONCLAYOREHIGHLIGHT.scaleByFactor(scaleFactor);
+		ImageEnum.ICONOAKLOGS.scaleByFactor(scaleFactor);
+		ImageEnum.ICONOAKLOGSHIGHLIGHT.scaleByFactor(scaleFactor);
+		
 	}
 	
 	public void actionPerformed(ActionEvent event) {
@@ -274,18 +308,26 @@ public class Game extends JPanel implements ActionListener, MouseListener {
 		}
 	}
 	
-	public void mouseClicked(MouseEvent event) {
-		System.out.println("click");
-		int[] tmp = CollisionDetection.checkCollisionsTile(event.getX(), event.getY(), state.tiles);
-		player.moveTo(tmp[0], tmp[1], tmp[2] == 1, tmp[3], tmp[4]);
+	public void mouseClicked(MouseEvent event) {}
+
+	public void mouseEntered(MouseEvent event) {}
+
+	public void mouseExited(MouseEvent event) {}
+
+	public void mousePressed(MouseEvent event) {
+		System.out.println("click at : " + event.getX() + ", " + event.getY());
+		int[] tmp = CollisionDetection.checkCollisionsTile(event.getButton(), event.getX(), event.getY(), state, board, player);
+		if (tmp[5] == 0) {
+			player.moveTo(tmp[0], tmp[1], tmp[2] == 1, tmp[3], tmp[4]);
+		} else if ((tmp[5] == 1) && (tmp[0] != -1)) {
+			if (event.getButton() == 1) {
+				player.getInv().highlightSlot(tmp[0]);
+			} else if (event.getButton() == 3) {
+				player.getInv().dropSlot(tmp[0]);
+			}
+		}
 	}
 
-	public void mouseEntered(MouseEvent e) {}
-
-	public void mouseExited(MouseEvent e) {}
-
-	public void mousePressed(MouseEvent e) {}
-
-	public void mouseReleased(MouseEvent e) {}
+	public void mouseReleased(MouseEvent event) {}
 
 }

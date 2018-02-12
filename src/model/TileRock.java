@@ -13,6 +13,7 @@ public class TileRock extends TileObject {
 		this.setType("TileRock");
 		depleted = "This rock has no ore left.";
 		started = "Mining...";
+		xp = rockType.getXp();
 	}
 	
 	public static Rock pickRock(int type) {
@@ -23,14 +24,16 @@ public class TileRock extends TileObject {
 		}
 	}
 	
-	public boolean start(BoardState state) {
+	public int[] start(BoardState state) {
 		if (this.rockType.getRockId() % 2 == 1) {
 			if (true) {
 				this.deplete(state);
+				int[] x = {getItem(), xp};
+				return x;
 			}
-			return true;
+			return null;
 		} else {
-			return false;
+			return null;
 		}
 	}
 	
@@ -41,5 +44,9 @@ public class TileRock extends TileObject {
 	
 	public Rock getRockType() {
 		return this.rockType;
+	}
+	
+	public int getItem() {
+		return rockType.getOreId();
 	}
 }

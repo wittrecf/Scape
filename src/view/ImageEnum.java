@@ -3,6 +3,7 @@ package view;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 
@@ -17,9 +18,16 @@ public enum ImageEnum {
 	ROCKCLAY("RockClay.png"),
 	TREENULL("TreeNull.png"),
 	TREEOAK("TreeOak.png"),
-	EXIT_DEFAULT("btn_default.png");
+	EXIT_DEFAULT("btn_default.png"),
+	INVENTORY("Inventory.png"),
+	ICONBLANK("IconBlank.png"),
+	ICONCLAYORE("IconClayOre.png"),
+	ICONCLAYOREHIGHLIGHT("IconClayOreHighlight.png"),
+	ICONOAKLOGS("IconOakLogs.png"),
+	ICONOAKLOGSHIGHLIGHT("IconOakLogsHighlight.png");
 	
 	private BufferedImage origImg, scaledImg;
+	private static BufferedImage[][] icons = new BufferedImage[60][2];
 	private final String filePath;
 	private final String directory = "resources/";
 	
@@ -117,11 +125,23 @@ public enum ImageEnum {
 		scaledImg = DrawOps.scaleImgByFactor(origImg, factor);
 	}
 	
+	public static void groupIcons() {
+		icons[0][0] = ImageEnum.ICONBLANK.getImg();
+		icons[10][0] = ImageEnum.ICONCLAYORE.getImg();
+		icons[10][1] = ImageEnum.ICONCLAYOREHIGHLIGHT.getImg();
+		icons[50][0] = ImageEnum.ICONOAKLOGS.getImg();
+		icons[50][1] = ImageEnum.ICONOAKLOGSHIGHLIGHT.getImg();
+	}
+	
 	/**
 	 * Resets the scaledImg to the origImg (ie undoes any scaling of the image).
 	 */
 	public void reset() {
 		scaledImg = origImg;
+	}
+	
+	public static BufferedImage[][] getIcons() {
+		return icons;
 	}
 	
 }

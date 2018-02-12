@@ -5,17 +5,17 @@ import java.awt.image.BufferedImage;
 import view.ImageEnum;
 
 public enum Rock {
-	NULLCLAY (10, 10, 20, 10, 1.0/400.0, ImageEnum.ROCKNULL),
-    CLAY (11, 10, 20, 10, 1.0/400.0, ImageEnum.ROCKCLAY);
+	NULLCLAY (10, 10, 5, 10, 1.0/400.0, ImageEnum.ROCKNULL.getImg()),
+    CLAY (11, 10, 5, 10, 1.0/400.0, ImageEnum.ROCKCLAY.getImg());
 
 	private int rockId;
     private int level;
-    private double xp;
+    private int xp;
     private int oreId;
     private double respawnRate;
-    private ImageEnum img;
+    private BufferedImage img; 
     
-    Rock(int rockId, int level, double xp, int oreId, double respawnRate, ImageEnum img) {
+    Rock(int rockId, int level, int xp, int oreId, double respawnRate, BufferedImage img) {
     	this.rockId = rockId;
         this.level = level;
         this.xp = xp;
@@ -28,7 +28,7 @@ public enum Rock {
 		return this.level;
 	}
 
-	public double getXp() {
+	public int getXp() {
 		return this.xp;
 	}
 
@@ -40,7 +40,7 @@ public enum Rock {
 		return this.respawnRate;
 	}
 	
-	public ImageEnum getImg() {
+	public BufferedImage getImg() {
 		return this.img;
 	}
 	
