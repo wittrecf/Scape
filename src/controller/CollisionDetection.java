@@ -31,14 +31,14 @@ public class CollisionDetection {
 		            		tmp[2] = 0;
 		            	}
 		            	tmp[5] = 0;
-		            	System.out.println("collision " + tmp[0] + ", " + tmp[1]);
+		            	//System.out.println("collision " + tmp[0] + ", " + tmp[1]);
 		            	return tmp;
 		            }
 		        }
 			}
 			return null;
 		} else {
-			System.out.println("clicked inventory");
+			//System.out.println("clicked inventory");
 			int num = 0;
 			for (InventoryTile i : player.getInv().getInventory()) {
 				Rectangle bdIt = new Rectangle((int) (board.getWidth() - ImageEnum.INVENTORY.getWidth() + (.06 * ImageEnum.INVENTORY.getWidth()) + (i.getXLoc() * (ImageEnum.ICONBLANK.getWidth() + .04 * ImageEnum.INVENTORY.getWidth()))),

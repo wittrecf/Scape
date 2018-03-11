@@ -71,12 +71,20 @@ public class Inventory {
     		System.out.println("highlighted slot is now: " + highlightedSlot);
     		return true;
     	} else {
+    		if (highlightedSlot != -1) {
+    			inventorySlots.get(highlightedSlot).highlightTile();
+    			highlightedSlot = -1;
+    		}
     		return false;
     	}
     }
     
     public boolean dropSlot(int slotNum) {
     	if (inventorySlots.get(slotNum).getItem() != 0) {
+    		if (highlightedSlot != -1) {
+    			inventorySlots.get(highlightedSlot).highlightTile();
+    			highlightedSlot = -1;
+    		}
     		inventorySlots.get(slotNum).setItem(0);
     		return true;
     	} else {

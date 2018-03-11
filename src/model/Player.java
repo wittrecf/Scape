@@ -29,6 +29,7 @@ public class Player {
 	private int[] target;
 	private BoardState state;
 	private boolean transfer = false;
+	private boolean doInteract;
 	private Inventory inv;
 	
 	private int[] statXP = new int[2];
@@ -336,8 +337,9 @@ public class Player {
 		}
 	}
 	
-	public void moveTo(int x, int y, boolean isTarget, int xSet, int ySet) {
+	public void moveTo(int x, int y, boolean isTarget, int xSet, int ySet, boolean interact) {
 		Node tmp = null;
+		this.doInteract = interact;
 		if (isTarget) {
 			this.target = new int[4];
 			this.target[0] = x;
@@ -359,7 +361,7 @@ public class Player {
 		while (true) {
 			//System.out.println(n.getX() + ", " + n.getY());
 			//System.out.println("dist " + n.getDist());
-			if ((n != null) && ((path.size() == 0) || (checkAdjacency(new int[] {path.get(path.size() - 1).getX(), path.get(path.size() - 1).getY()}, new int[] {n.getX(), n.getY()})))) {
+			if ((n != null) && ((path.size() == 0) || (checkAdjacency(true, new int[] {path.get(path.size() - 1).getX(), path.get(path.size() - 1).getY()}, new int[] {n.getX(), n.getY()})))) {
 				state.mapTiles[n.getX()][n.getY()] = 3;
 				if (n.getPrev() != null) {
 					path.add(n);
@@ -370,6 +372,9 @@ public class Player {
 					}
 					break;
 				}
+			} else {
+				path = new ArrayList<Node>();
+				return;
 			}
 		}
 	}
@@ -385,8 +390,12 @@ public class Player {
 		}
 	}
 	
-	private boolean checkAdjacency(int[] t1, int[] t2) {
-		return ((Math.abs(Math.abs(t2[0] - t1[0]) + Math.abs(t2[1] - t1[1])) == 1));
+	private boolean checkAdjacency(boolean checkDiagonal, int[] t1, int[] t2) {
+		if (checkDiagonal) {
+			return (Math.abs(t2[0] - t1[0]) <= 1) && (Math.abs(t2[1] - t1[1]) <= 1);
+		} else {
+			return ((Math.abs(Math.abs(t2[0] - t1[0]) + Math.abs(t2[1] - t1[1])) == 1));
+		}
 	}
 	
 	private void addXP(String type, int xp) {
@@ -394,6 +403,38 @@ public class Player {
 			statXP[0] += xp;
 		} else if (type.equals("TileTree")) {
 			statXP[1] += xp;
+		}
+	}
+	
+	public void interact(int x, int y, int[] t) {
+		if (checkAdjacency(false, new int[] {xLoc, yLoc}, target)) {
+			if (this.inv.searchInventorySpace()) {
+				System.out.println(state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().getStarted());
+				int[] tmp = state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().start(state);
+				if (tmp != null) {
+					inv.addItem(tmp[0]);
+					addXP(state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().getType(), tmp[1]);
+					path.clear();
+					target = null;
+				} else {
+					System.out.println(state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().getDepleted());
+					path.clear();
+					target = null;
+				}
+			} else {
+				System.out.println("Your inventory is full.");
+				path.clear();
+				target = null;
+			}
+			/*if (state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().getType().equals("MiningRock")
+				&& ((MiningRock) state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj()).getRockType().getRockId() % 2 != 0) {
+				System.out.println("adj");
+				state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().start(state);
+			} else if (state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().getType().equals("MiningRock")) {
+				System.out.println("Rock is depleted.");
+				path.clear();
+				target = null;
+			}*/
 		}
 	}
 	
@@ -425,36 +466,8 @@ public class Player {
 				//System.out.println("d");
 				//System.out.println("moved to " + xLoc + ", " + yLoc);
 			}
-		} else if (target != null) {
-			if (checkAdjacency(new int[] {xLoc, yLoc}, target)) {
-				if (this.inv.searchInventorySpace()) {
-					System.out.println(state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().getStarted());
-					int[] tmp = state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().start(state);
-					if (tmp != null) {
-						inv.addItem(tmp[0]);
-						addXP(state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().getType(), tmp[1]);
-						path.clear();
-						target = null;
-					} else {
-						System.out.println(state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().getDepleted());
-						path.clear();
-						target = null;
-					}
-				} else {
-					System.out.println("Your inventory is full.");
-					path.clear();
-					target = null;
-				}
-				/*if (state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().getType().equals("MiningRock")
-					&& ((MiningRock) state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj()).getRockType().getRockId() % 2 != 0) {
-					System.out.println("adj");
-					state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().start(state);
-				} else if (state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().getType().equals("MiningRock")) {
-					System.out.println("Rock is depleted.");
-					path.clear();
-					target = null;
-				}*/
-			}
+		} else if ((target != null) && doInteract) {
+			interact(xLoc, yLoc, target);
 		}
 	}
 	
@@ -497,11 +510,19 @@ public class Player {
 		return this.inv;
 	}
 	
-	public int getStat(int n) {
+	public int getState(int n) {
 		return this.statXP[n];
 	}
 	
 	public void setState(BoardState state) {
 		this.state = state;
+	}
+	
+	public boolean getInteract() {
+		return doInteract;
+	}
+	
+	public void setInteract(boolean b) {
+		doInteract = b;
 	}
 }

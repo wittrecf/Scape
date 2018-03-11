@@ -9,11 +9,14 @@ import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.LayoutManager;
+import java.awt.Menu;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -25,11 +28,15 @@ import java.util.Iterator;
 import java.util.Scanner;
 import java.util.Timer;
 
+import javax.swing.Action;
 import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.KeyStroke;
 
 import controller.CollisionDetection;
 import controller.GameTimer;
@@ -38,11 +45,12 @@ import model.Board;
 import model.BoardState;
 import model.BoardTile;
 import model.InventoryTile;
+import model.KeyType;
 import model.TileRock;
 import model.TileTree;
 import model.Player;
 
-public class Game extends JPanel implements ActionListener, MouseListener {
+public class Game extends JPanel implements ActionListener {
 	
 	private boolean gameOver;
 	private Board board;
@@ -57,6 +65,10 @@ public class Game extends JPanel implements ActionListener, MouseListener {
 	
 	private int inventoryWidth;
 	private int inventoryHeight;
+	
+	public int[] click;
+	public int[] mouseLoc;
+	public String hoverText = "";
 	
 	private JButton btnExit = new JButton();
 	private static GridBagLayout layout = new GridBagLayout();
@@ -123,8 +135,15 @@ public class Game extends JPanel implements ActionListener, MouseListener {
 		centerX = ((board.getWidth() - ImageEnum.TILEGRASS.getWidth()) / 2) / ImageEnum.TILEGRASS.getWidth();
     	centerY = ((board.getHeight() - ImageEnum.TILEGRASS.getHeight()) / 2) / ImageEnum.TILEGRASS.getHeight();
     	System.out.println("CENTER: " + centerX + ", " + centerY);
+    	
+    	mouseLoc = new int[2];
 		
-		this.addMouseListener(this);
+		// Then on your component(s)
+		this.addMouseListener(new PopClickListener());
+		this.addMouseMotionListener(new PopupMotionListener());
+		
+		this.getInputMap().put(KeyStroke.getKeyStroke("P"), "doSomething");
+		this.getActionMap().put("doSomething", new KeyType("P"));
 	}
 	
 	public void startup() {
@@ -216,8 +235,12 @@ public class Game extends JPanel implements ActionListener, MouseListener {
 						null);
 			}
 			
-			g2.drawString("Mining: " + player.getStat(0), 0, 10);
-			g2.drawString("Woodcutting: " + player.getStat(1), 0, 30);
+			if (click != null) {
+				g2.drawString(hoverText, mouseLoc[0] + 30, mouseLoc[1] + 30);
+			}
+			
+			g2.drawString("Mining: " + player.getState(0), 0, 10);
+			g2.drawString("Woodcutting: " + player.getState(1), 0, 30);
 		}
 	}
 	
@@ -302,32 +325,140 @@ public class Game extends JPanel implements ActionListener, MouseListener {
 		
 	}
 	
+	public ArrayList<String> getMenuItems() {
+		ArrayList<String> s = new ArrayList<String>();
+		if (click[5] == 0) {
+			if ((state.mapTiles[click[0]][click[1]] >= 10) && state.mapTiles[click[0]][click[1]] < 50) {
+				s.add("Mine " + TileRock.pickRock((int) Math.floor(state.mapTiles[click[0]][click[1]])).getRockName());
+			} else if ((state.mapTiles[click[0]][click[1]] >= 50) && state.mapTiles[click[0]][click[1]] < 90) {
+				s.add("Cut " + TileTree.pickTree((int) Math.floor(state.mapTiles[click[0]][click[1]])).getTreeName());
+			}
+			s.add("Walk here");
+		} else if (click[5] == 1) {
+			if ((click[0] >= 0) && (player.getInv().getSlot(click[0]) != 0)) {
+				s.add("Use " + InventoryTile.pickItem(player.getInv().getSlot(click[0])).getItemName());
+				s.add("Drop " + InventoryTile.pickItem(player.getInv().getSlot(click[0])).getItemName());
+			}
+		}
+		
+		s.add("Cancel");
+		return s;
+	}
+	
 	public void actionPerformed(ActionEvent event) {
 		if(event.getSource() == btnExit) {
 			this.shutdown();
 		}
 	}
 	
-	public void mouseClicked(MouseEvent event) {}
+	public void movePlayer(int[] tmp, boolean interact) {
+		player.moveTo(tmp[0], tmp[1], tmp[2] == 1, tmp[3], tmp[4], interact);
+	}
 
-	public void mouseEntered(MouseEvent event) {}
-
-	public void mouseExited(MouseEvent event) {}
-
-	public void mousePressed(MouseEvent event) {
-		System.out.println("click at : " + event.getX() + ", " + event.getY());
-		int[] tmp = CollisionDetection.checkCollisionsTile(event.getButton(), event.getX(), event.getY(), state, board, player);
-		if (tmp[5] == 0) {
-			player.moveTo(tmp[0], tmp[1], tmp[2] == 1, tmp[3], tmp[4]);
-		} else if ((tmp[5] == 1) && (tmp[0] != -1)) {
-			if (event.getButton() == 1) {
-				player.getInv().highlightSlot(tmp[0]);
-			} else if (event.getButton() == 3) {
-				player.getInv().dropSlot(tmp[0]);
+	public void mouseReleased(MouseEvent event) {}
+	
+	class PopUpDemo extends JPopupMenu {
+		ActionListener actionListener = new PopupActionListener();
+	    JMenuItem cmp[];
+	    public PopUpDemo(ArrayList<String> s){
+	    	cmp = new JMenuItem[s.size()];
+	    	for (int i = 0; i < s.size(); i++) {
+	    		cmp[i] = new JMenuItem(s.get(i));
+	    		cmp[i].setName(s.get(i));
+	    		cmp[i].addActionListener(actionListener);
+	    		add(cmp[i]);
+	    	}
+	    }
+	}
+	
+	class PopupActionListener implements ActionListener {
+		public void actionPerformed(ActionEvent event) {
+			String tmp = event.getActionCommand();
+			String str[] = tmp.split(" ");
+			if (str.length > 0) {
+				if (str[0].equals("Cancel")) {
+					return;
+				} else if ((str[0] + " " + str[1]).equals("Walk here")) {
+					movePlayer(click, false);
+				}  else if (str[0].equals("Mine") || str[0].equals("Cut")) {
+					movePlayer(click, true);
+				} else if (str[0].equals("Use")) {
+					player.getInv().highlightSlot(click[0]);
+				} else if (str[0].equals("Drop")) {
+					player.getInv().dropSlot(click[0]);
+				}
 			}
 		}
 	}
 
-	public void mouseReleased(MouseEvent event) {}
+	class PopClickListener extends MouseAdapter {
+		PopUpDemo menu = new PopUpDemo(new ArrayList<String>());
+		
+		public void reactClick(MouseEvent e) {
+	        if (e.isPopupTrigger()) {
+	        	hoverText = "";
+	            doPop(e, true, getMenuItems());
+	        } else if (e.getButton() == 1) {
+	        	String tmp = doPop(e, false, getMenuItems());
+	        	String str[] = tmp.split(" ");
+    			if ((str[0] + " " + str[1]).equals("Walk here")) {
+    				player.moveTo(click[0], click[1], click[2] == 1, click[3], click[4], false);
+    			} else if (str[0].equals("Mine") || str[0].equals("Cut")) {
+    				player.moveTo(click[0], click[1], click[2] == 1, click[3], click[4], true);
+    			} else if (str[0].equals("Use")) {
+    				player.getInv().highlightSlot(click[0]);
+    			}
+	        }
+		}
+		
+	    public void mousePressed(MouseEvent e){
+	    	if (e.isPopupTrigger()) {
+	    		click = CollisionDetection.checkCollisionsTile(e.getButton(), e.getX(), e.getY(), state, board, player);
+	            doPop(e, true, getMenuItems());
+	    	}
+	    }
 
+	    public void mouseReleased(MouseEvent e){
+	    	click = CollisionDetection.checkCollisionsTile(e.getButton(), e.getX(), e.getY(), state, board, player);
+	    	reactClick(e);
+	    }
+	    
+	    public void mouseEntered(MouseEvent e) {
+	    	menu.setVisible(false);
+	    }
+
+	    private String doPop(MouseEvent e, boolean doDisplay, ArrayList<String> str){
+	        menu = new PopUpDemo(str);
+	        if (doDisplay) {
+	        	menu.show(e.getComponent(), (int) (e.getX() - menu.getPreferredSize().getWidth()/2), e.getY());
+	        	menu.setVisible(true);
+	        	return null;
+	        } else {
+	        	System.out.println(menu.getComponent(0).getName());
+	        	return menu.getComponent(0).getName();
+	        }
+	    }
+	}
+	
+	
+	class PopupMotionListener implements MouseMotionListener {
+		public void mouseDragged(MouseEvent e) {
+			// TODO Auto-generated method stub
+		}
+	
+		public void mouseMoved(MouseEvent e) {
+			mouseLoc[0] = e.getX();
+			mouseLoc[1] = e.getY();
+			click = CollisionDetection.checkCollisionsTile(e.getButton(), e.getX(), e.getY(), state, board, player);
+			if (click[5] == 0) {
+		    	String tmp = getMenuItems().get(0);
+		    	String str[] = tmp.split(" ");
+				if (!(str[0] + " " + str[1]).equals("Walk here")) {
+					hoverText = tmp;
+				} else {
+					hoverText = "";
+				}
+			}
+		}
+	}
 }
