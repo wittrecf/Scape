@@ -471,6 +471,17 @@ public class Player {
 		}
 	}
 	
+	public boolean dropSlot(int slot) {
+		int item = inv.getSlot(slot);
+		if (item != 0) {
+			if (state.itemTiles[xLoc][yLoc] == null) {
+				state.itemTiles[xLoc][yLoc] = new ArrayList<Integer>();
+			}
+			state.itemTiles[xLoc][yLoc].add(item);
+		}
+		return (inv.dropSlot(slot));
+	}
+	
 	public int getInventorySlot(int slot) {
 		return inv.getSlot(slot);
 	}

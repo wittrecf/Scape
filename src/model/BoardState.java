@@ -16,7 +16,7 @@ public class BoardState {
 	public int mapColsNum = 100;
 	
 	public double[][] mapTiles;
-	public ArrayList<Integer>[][] itemTiles;
+	public ArrayList<Integer>[][] itemTiles = new ArrayList[100][100];
 	
 	public ArrayList<ArrayList<BoardTile>> tiles;
 	

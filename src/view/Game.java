@@ -8,6 +8,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.LayoutManager;
 import java.awt.Menu;
 import java.awt.Toolkit;
@@ -29,14 +30,18 @@ import java.util.Scanner;
 import java.util.Timer;
 
 import javax.swing.Action;
+import javax.swing.BorderFactory;
 import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.KeyStroke;
+import javax.swing.border.Border;
 
 import controller.CollisionDetection;
 import controller.GameTimer;
@@ -215,6 +220,11 @@ public class Game extends JPanel implements ActionListener {
 		    				g2.drawImage(((TileTree) block.getObj()).getTreeType().getImg(), block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), null);
 		    			}
 		    		}
+		    		if (state.itemTiles[x][y] != null) {
+		    			for (int i = 0; i < state.itemTiles[x][y].size(); i++) {
+		    				g2.drawImage(ImageEnum.getIcons()[state.itemTiles[x][y].get(i)][0], block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), null);
+		    			}
+		    		}
 			    	g2.setColor(Color.WHITE);
 		    		g2.setFont(new Font("TimesRoman", Font.PLAIN, (int)(0.35*fontSize)));
 		    		//g2.drawString(block.getXLoc() / ImageEnum.TILEGRASS.getWidth() + ":" + block.getYLoc() / ImageEnum.TILEGRASS.getHeight(), block.getXLoc() + 15 + player.getXOff(), block.getYLoc() + 15 + player.getYOff());
@@ -229,10 +239,16 @@ public class Game extends JPanel implements ActionListener {
 			g2.drawImage(ImageEnum.INVENTORY.getImg(), board.getWidth() - ImageEnum.INVENTORY.getWidth(), board.getHeight() - ImageEnum.INVENTORY.getHeight(), null);
 			
 			for (InventoryTile i : player.getInv().getInventory()) {
-				g2.drawImage(i.getItemImg(),
+				g2.drawImage(ImageEnum.ICONBLANK.getImg(),
 						(int) (board.getWidth() - ImageEnum.INVENTORY.getWidth() + (.06 * ImageEnum.INVENTORY.getWidth()) + (i.getXLoc() * (ImageEnum.ICONBLANK.getWidth() + .04 * ImageEnum.INVENTORY.getWidth()))),
 						(int) (board.getHeight() - ImageEnum.INVENTORY.getHeight() + (.04 * ImageEnum.INVENTORY.getHeight()) + (i.getYLoc() * (ImageEnum.ICONBLANK.getHeight() + .04 * ImageEnum.INVENTORY.getWidth()))),
 						null);
+				if (i.getItem() > 0) {
+					g2.drawImage(i.getItemImg(),
+							(int) (board.getWidth() - ImageEnum.INVENTORY.getWidth() + (.06 * ImageEnum.INVENTORY.getWidth()) + (i.getXLoc() * (ImageEnum.ICONBLANK.getWidth() + .04 * ImageEnum.INVENTORY.getWidth()))),
+							(int) (board.getHeight() - ImageEnum.INVENTORY.getHeight() + (.04 * ImageEnum.INVENTORY.getHeight()) + (i.getYLoc() * (ImageEnum.ICONBLANK.getHeight() + .04 * ImageEnum.INVENTORY.getWidth()))),
+							null);
+				}
 			}
 			
 			if (click != null) {
@@ -333,6 +349,11 @@ public class Game extends JPanel implements ActionListener {
 			} else if ((state.mapTiles[click[0]][click[1]] >= 50) && state.mapTiles[click[0]][click[1]] < 90) {
 				s.add("Cut " + TileTree.pickTree((int) Math.floor(state.mapTiles[click[0]][click[1]])).getTreeName());
 			}
+			if (state.itemTiles[click[0]][click[1]] != null) {
+				for (int i = state.itemTiles[click[0]][click[1]].size() - 1; i >= 0; i--) {
+					s.add("Take " + state.itemTiles[click[0]][click[1]].get(i));
+				}
+			}
 			s.add("Walk here");
 		} else if (click[5] == 1) {
 			if ((click[0] >= 0) && (player.getInv().getSlot(click[0]) != 0)) {
@@ -362,11 +383,16 @@ public class Game extends JPanel implements ActionListener {
 	    JMenuItem cmp[];
 	    public PopUpDemo(ArrayList<String> s){
 	    	cmp = new JMenuItem[s.size()];
+	    	this.setBorder(BorderFactory.createTitledBorder("Choose Option"));
 	    	for (int i = 0; i < s.size(); i++) {
 	    		cmp[i] = new JMenuItem(s.get(i));
 	    		cmp[i].setName(s.get(i));
 	    		cmp[i].addActionListener(actionListener);
 	    		add(cmp[i]);
+	    	}
+	    	this.setLayout(new GridLayout(0, 1));
+	    	if (this.getPreferredSize().width < 100) {
+	    		this.setPreferredSize(new Dimension(100, this.getPreferredSize().height));
 	    	}
 	    }
 	}
@@ -382,10 +408,13 @@ public class Game extends JPanel implements ActionListener {
 					movePlayer(click, false);
 				}  else if (str[0].equals("Mine") || str[0].equals("Cut")) {
 					movePlayer(click, true);
+				} else if (str[0].equals("Take")) {
+		    		player.getInv().addItem(Integer.parseInt(str[1]));
+		    		state.itemTiles[click[0]][click[1]].remove(new Integer(Integer.parseInt(str[1])));
 				} else if (str[0].equals("Use")) {
 					player.getInv().highlightSlot(click[0]);
 				} else if (str[0].equals("Drop")) {
-					player.getInv().dropSlot(click[0]);
+					player.dropSlot(click[0]);
 				}
 			}
 		}
@@ -405,6 +434,9 @@ public class Game extends JPanel implements ActionListener {
     				player.moveTo(click[0], click[1], click[2] == 1, click[3], click[4], false);
     			} else if (str[0].equals("Mine") || str[0].equals("Cut")) {
     				player.moveTo(click[0], click[1], click[2] == 1, click[3], click[4], true);
+    			} else if (str[0].equals("Take")) {
+		    		player.getInv().addItem(Integer.parseInt(str[1]));
+		    		state.itemTiles[click[0]][click[1]].remove(0);
     			} else if (str[0].equals("Use")) {
     				player.getInv().highlightSlot(click[0]);
     			}
