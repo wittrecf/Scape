@@ -50,6 +50,7 @@ import model.Board;
 import model.BoardState;
 import model.BoardTile;
 import model.InventoryTile;
+import model.Item;
 import model.KeyType;
 import model.TileRock;
 import model.TileTree;
@@ -351,13 +352,13 @@ public class Game extends JPanel implements ActionListener {
 			}
 			if (state.itemTiles[click[0]][click[1]] != null) {
 				for (int i = state.itemTiles[click[0]][click[1]].size() - 1; i >= 0; i--) {
-					s.add("Take " + state.itemTiles[click[0]][click[1]].get(i));
+					s.add("Take " + Item.getItemById(state.itemTiles[click[0]][click[1]].get(i)).getItemName());
 				}
 			}
 			s.add("Walk here");
 		} else if (click[5] == 1) {
 			if ((click[0] >= 0) && (player.getInv().getSlot(click[0]) != 0)) {
-				s.add("Use " + InventoryTile.pickItem(player.getInv().getSlot(click[0])).getItemName());
+				//s.add("Use " + InventoryTile.pickItem(player.getInv().getSlot(click[0])).getItemName());
 				s.add("Drop " + InventoryTile.pickItem(player.getInv().getSlot(click[0])).getItemName());
 			}
 		}
@@ -409,8 +410,15 @@ public class Game extends JPanel implements ActionListener {
 				}  else if (str[0].equals("Mine") || str[0].equals("Cut")) {
 					movePlayer(click, true);
 				} else if (str[0].equals("Take")) {
-		    		player.getInv().addItem(Integer.parseInt(str[1]));
-		    		state.itemTiles[click[0]][click[1]].remove(new Integer(Integer.parseInt(str[1])));
+					click[2] = 1;
+					String t = "";
+    				for (int i = 1; i < str.length; i++) {
+    					t += str[i];
+    					if (i != str.length - 1) {
+    						t += " ";
+    					}
+    				}
+    				player.pickUp(Item.getItemByName(t).getItemId(), click);
 				} else if (str[0].equals("Use")) {
 					player.getInv().highlightSlot(click[0]);
 				} else if (str[0].equals("Drop")) {
@@ -435,10 +443,20 @@ public class Game extends JPanel implements ActionListener {
     			} else if (str[0].equals("Mine") || str[0].equals("Cut")) {
     				player.moveTo(click[0], click[1], click[2] == 1, click[3], click[4], true);
     			} else if (str[0].equals("Take")) {
-		    		player.getInv().addItem(Integer.parseInt(str[1]));
-		    		state.itemTiles[click[0]][click[1]].remove(0);
+    				System.out.println(click[0] + ",, " + click[1]);
+    				click[2] = 1;
+    				String t = "";
+    				for (int i = 1; i < str.length; i++) {
+    					t += str[i];
+    					if (i != str.length - 1) {
+    						t += " ";
+    					}
+    				}
+    				player.pickUp(Item.getItemByName(t).getItemId(), click);
     			} else if (str[0].equals("Use")) {
     				player.getInv().highlightSlot(click[0]);
+    			} else if (str[0].equals("Drop")) {
+					player.dropSlot(click[0]);
     			}
 	        }
 		}

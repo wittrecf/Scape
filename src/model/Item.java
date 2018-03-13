@@ -19,6 +19,27 @@ public enum Item {
         this.img = img;
     }
     
+    public static Item getItemById(int id) {
+    	switch (id) {
+    	case 0: return NULL;
+    	case 10: return CLAYORE;
+    	case 50: return OAKLOG;
+    	default: return null;
+    	}
+    }
+    
+    public static Item getItemByName(String name) {
+    	if (name.equals(NULL.itemName)) {
+    		return NULL;
+    	} else if (name.equals(CLAYORE.itemName)) {
+    		return CLAYORE;
+    	} else if (name.equals(OAKLOG.itemName)) {
+    		return OAKLOG;
+    	} else {
+    		return null;
+    	}
+    }
+    
 	public int getItemId() {
 		return itemId;
 	}

@@ -25,6 +25,7 @@ public class Player {
 	private int xDir = 0;
 	private int yDir = 0;
 	private int movSize = 16;
+	private int pickItem = 0;
 	private ArrayList<Node> path;
 	private int[] target;
 	private BoardState state;
@@ -340,6 +341,7 @@ public class Player {
 	public void moveTo(int x, int y, boolean isTarget, int xSet, int ySet, boolean interact) {
 		Node tmp = null;
 		this.doInteract = interact;
+		pickItem = 0;
 		if (isTarget) {
 			this.target = new int[4];
 			this.target[0] = x;
@@ -391,11 +393,16 @@ public class Player {
 	}
 	
 	private boolean checkAdjacency(boolean checkDiagonal, int[] t1, int[] t2) {
-		if (checkDiagonal) {
-			return (Math.abs(t2[0] - t1[0]) <= 1) && (Math.abs(t2[1] - t1[1]) <= 1);
+		if ((t1[0] == t2[0]) && (t1[1] == t2[1])) {
+			return true;
 		} else {
-			return ((Math.abs(Math.abs(t2[0] - t1[0]) + Math.abs(t2[1] - t1[1])) == 1));
+			if (checkDiagonal) {
+				return (Math.abs(t2[0] - t1[0]) <= 1) && (Math.abs(t2[1] - t1[1]) <= 1);
+			} else {
+				return ((Math.abs(Math.abs(t2[0] - t1[0]) + Math.abs(t2[1] - t1[1])) == 1));
+			}
 		}
+		
 	}
 	
 	private void addXP(String type, int xp) {
@@ -468,6 +475,24 @@ public class Player {
 			}
 		} else if ((target != null) && doInteract) {
 			interact(xLoc, yLoc, target);
+		} else if ((pickItem > 0) && (target != null)) {
+			if (checkAdjacency(false, new int[] {xLoc, yLoc}, target)) {
+			inv.addItem(pickItem);
+    		state.itemTiles[target[0]][target[1]].remove(new Integer(pickItem));
+    		pickItem = 0;
+			} else {
+				System.out.println("is " + xLoc + ", " + yLoc + " adjacent to " + target[0] + ", " + target[1]);
+			}
+		}
+	}
+	
+	public void pickUp(int item, int[] tmp) {
+		if ((xLoc == tmp[0]) && (yLoc == tmp[1])) {
+			inv.addItem(item);
+    		state.itemTiles[tmp[0]][tmp[1]].remove(new Integer(item));
+		} else {
+			moveTo(tmp[0], tmp[1], tmp[2] == 1, tmp[3], tmp[4], false);
+			pickItem = item;
 		}
 	}
 	
@@ -478,6 +503,7 @@ public class Player {
 				state.itemTiles[xLoc][yLoc] = new ArrayList<Integer>();
 			}
 			state.itemTiles[xLoc][yLoc].add(item);
+			state.itemTiles[xLoc][yLoc].sort(null);
 		}
 		return (inv.dropSlot(slot));
 	}
