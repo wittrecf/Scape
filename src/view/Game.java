@@ -76,11 +76,14 @@ public class Game extends JPanel implements ActionListener {
 	public int[] mouseLoc;
 	public String hoverText = "";
 	
+	public JLabel label;
+	
 	private JButton btnExit = new JButton();
 	private static GridBagLayout layout = new GridBagLayout();
     private static GridBagConstraints c = new GridBagConstraints();
 	
-	private String arrayFile = "resources/mapArray.txt";
+	private String mapArrayFile = "resources/mapArray.txt";
+	private String objArrayFile = "resources/objArray.txt";
 	
 	public Game(MainController mainController) {
 		this.mainController = mainController;
@@ -117,9 +120,16 @@ public class Game extends JPanel implements ActionListener {
     	
     	try {
 			readMapArray();
+			readObjArray();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
+    	
+    	label = new JLabel(hoverText);
+    	label.setForeground(new Color(235, 224, 188));
+    	label.setOpaque(true);
+    	label.setBackground(Color.BLACK);
+    	add(label);
 		
 		btnExit.setPreferredSize(new Dimension(ImageEnum.TILEGRASS.getWidth()*2, ImageEnum.TILEGRASS.getHeight()));
 		btnExit.setBackground(Color.WHITE);
@@ -143,7 +153,7 @@ public class Game extends JPanel implements ActionListener {
     	System.out.println("CENTER: " + centerX + ", " + centerY);
     	
     	mouseLoc = new int[2];
-		
+    	
 		// Then on your component(s)
 		this.addMouseListener(new PopClickListener());
 		this.addMouseMotionListener(new PopupMotionListener());
@@ -167,6 +177,7 @@ public class Game extends JPanel implements ActionListener {
 		try {
 			player.writePlayerData();
 			writeMapArray();
+			writeObjArray();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (UnsupportedEncodingException e) {
@@ -202,10 +213,10 @@ public class Game extends JPanel implements ActionListener {
 		    		block.setXCoord(x);
 		    		block.setYCoord(y);
 		    		block.setType(state.mapTiles[x][y]);
-		    		if (block.getType() >= 10 && block.getType() < 50) {
-		    			block.setObj(new TileRock(x, y, block.getType()));
-		    		} else if (block.getType() >= 50 && block.getType() < 90) {
-		    			block.setObj(new TileTree(x, y, block.getType()));
+		    		if (state.objTiles[x][y] >= 10 && state.objTiles[x][y] < 50) {
+		    			block.setObj(new TileRock(x, y, state.objTiles[x][y]));
+		    		} else if (state.objTiles[x][y] >= 50 && state.objTiles[x][y] < 90) {
+		    			block.setObj(new TileTree(x, y, state.objTiles[x][y]));
 		    		} else {
 		    			block.setObj(null);
 		    		}
@@ -223,7 +234,7 @@ public class Game extends JPanel implements ActionListener {
 		    		}
 		    		if (state.itemTiles[x][y] != null) {
 		    			for (int i = 0; i < state.itemTiles[x][y].size(); i++) {
-		    				g2.drawImage(ImageEnum.getIcons()[state.itemTiles[x][y].get(i)][0], block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), null);
+		    				g2.drawImage(ImageEnum.scaleToDimensions(ImageEnum.getIcons()[state.itemTiles[x][y].get(i)][0], ImageEnum.TILEGRASS.getWidth(), ImageEnum.TILEGRASS.getHeight()), block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), null);
 		    			}
 		    		}
 			    	g2.setColor(Color.WHITE);
@@ -253,7 +264,26 @@ public class Game extends JPanel implements ActionListener {
 			}
 			
 			if (click != null) {
-				g2.drawString(hoverText, mouseLoc[0] + 30, mouseLoc[1] + 30);
+				int xFar;
+				int yFar;
+				if ((mouseLoc[0] + 30 + label.getPreferredSize().width) > mainController.getWidth()) {
+					xFar = mainController.getWidth() - (mouseLoc[0] + 30 + label.getPreferredSize().width);
+				} else {
+					xFar = 0;
+				}
+				if ((mouseLoc[1] + 30 + label.getPreferredSize().height) > mainController.getHeight()) {
+					yFar = mainController.getHeight() - (mouseLoc[1] + 30 + label.getPreferredSize().height);
+				} else {
+					yFar = 0;
+				}
+				if (!hoverText.equals("")) {
+					label.setBorder(BorderFactory.createLineBorder(Color.GRAY, 2));
+					label.setText(hoverText);
+					label.setBounds(mouseLoc[0] + 30 + xFar, mouseLoc[1] + 30 + yFar, label.getPreferredSize().width, label.getPreferredSize().height);
+				} else {
+					label.setBorder(null);
+					label.setText(hoverText);
+				}
 			}
 			
 			g2.drawString("Mining: " + player.getState(0), 0, 10);
@@ -278,7 +308,7 @@ public class Game extends JPanel implements ActionListener {
 	}
 	
 	private void readMapArray() throws FileNotFoundException {
-		Scanner inFile = new Scanner(new File(arrayFile));
+		Scanner inFile = new Scanner(new File(mapArrayFile));
 		
 	    ArrayList<Double> tempArr = new ArrayList<Double>();
 	    
@@ -300,12 +330,47 @@ public class Game extends JPanel implements ActionListener {
     	}
 	  }
 	
+	private void readObjArray() throws FileNotFoundException {
+		Scanner inFile = new Scanner(new File(objArrayFile));
+		
+	    ArrayList<Double> tempArr = new ArrayList<Double>();
+	    
+	    int x = 0;
+	    while (inFile.hasNext()) {
+	    	tempArr.add(inFile.nextDouble());
+	    	x++;
+	    }
+	    
+	    inFile.close();
+	    
+	    x = 0;
+	    state.objTiles = new double[state.mapColsNum][state.mapRowsNum];
+    	for (int j = 0; j < state.mapRowsNum; j++) {
+    		for (int i = 0; i < state.mapColsNum; i++) {
+    			state.objTiles[i][j] = tempArr.get(x);
+    			x++;
+    		}
+    	}
+	  }
+	
 	private void writeMapArray() throws FileNotFoundException, UnsupportedEncodingException {
-		PrintWriter writer = new PrintWriter(arrayFile, "UTF-8");
+		PrintWriter writer = new PrintWriter(mapArrayFile, "UTF-8");
 		
 		for (int j = 0; j < state.mapRowsNum; j++) {
     		for (int i = 0; i < state.mapColsNum; i++) {
     			writer.print(state.mapTiles[i][j] + " ");
+    		}
+    		writer.println();
+    	}
+		writer.close();
+	}
+	
+	private void writeObjArray() throws FileNotFoundException, UnsupportedEncodingException {
+		PrintWriter writer = new PrintWriter(objArrayFile, "UTF-8");
+		
+		for (int j = 0; j < state.mapRowsNum; j++) {
+    		for (int i = 0; i < state.mapColsNum; i++) {
+    			writer.print(state.objTiles[i][j] + " ");
     		}
     		writer.println();
     	}
@@ -345,21 +410,21 @@ public class Game extends JPanel implements ActionListener {
 	public ArrayList<String> getMenuItems() {
 		ArrayList<String> s = new ArrayList<String>();
 		if (click[5] == 0) {
-			if ((state.mapTiles[click[0]][click[1]] >= 10) && state.mapTiles[click[0]][click[1]] < 50) {
-				s.add("Mine " + TileRock.pickRock((int) Math.floor(state.mapTiles[click[0]][click[1]])).getRockName());
-			} else if ((state.mapTiles[click[0]][click[1]] >= 50) && state.mapTiles[click[0]][click[1]] < 90) {
-				s.add("Cut " + TileTree.pickTree((int) Math.floor(state.mapTiles[click[0]][click[1]])).getTreeName());
+			if ((state.objTiles[click[0]][click[1]] >= 10) && state.objTiles[click[0]][click[1]] < 50) {
+				s.add("<html>Mine <font color=\"#ffff00\"> " + TileRock.pickRock((int) Math.floor(state.objTiles[click[0]][click[1]])).getRockName() + " </font></html>");
+			} else if ((state.objTiles[click[0]][click[1]] >= 50) && state.objTiles[click[0]][click[1]] < 90) {
+				s.add("<html>Cut <font color=\"#ffff00\"> " + TileTree.pickTree((int) Math.floor(state.objTiles[click[0]][click[1]])).getTreeName() + " </font></html>");
 			}
 			if (state.itemTiles[click[0]][click[1]] != null) {
 				for (int i = state.itemTiles[click[0]][click[1]].size() - 1; i >= 0; i--) {
-					s.add("Take " + Item.getItemById(state.itemTiles[click[0]][click[1]].get(i)).getItemName());
+					s.add("<html>Take <font color=\"#f8d56b\"> " + Item.getItemById(state.itemTiles[click[0]][click[1]].get(i)).getItemName() + " </font></html>");
 				}
 			}
 			s.add("Walk here");
 		} else if (click[5] == 1) {
 			if ((click[0] >= 0) && (player.getInv().getSlot(click[0]) != 0)) {
-				//s.add("Use " + InventoryTile.pickItem(player.getInv().getSlot(click[0])).getItemName());
-				s.add("Drop " + InventoryTile.pickItem(player.getInv().getSlot(click[0])).getItemName());
+				s.add("<html>Use <font color=\"#f8d56b\"> " + InventoryTile.pickItem(player.getInv().getSlot(click[0])).getItemName() + " </font></html>");
+				s.add("<html>Drop <font color=\"#f8d56b\"> " + InventoryTile.pickItem(player.getInv().getSlot(click[0])).getItemName() + " </font></html>");
 			}
 		}
 		
@@ -385,9 +450,12 @@ public class Game extends JPanel implements ActionListener {
 	    public PopUpDemo(ArrayList<String> s){
 	    	cmp = new JMenuItem[s.size()];
 	    	this.setBorder(BorderFactory.createTitledBorder("Choose Option"));
+	    	this.setBackground(Color.GRAY);
 	    	for (int i = 0; i < s.size(); i++) {
 	    		cmp[i] = new JMenuItem(s.get(i));
 	    		cmp[i].setName(s.get(i));
+	    		cmp[i].setForeground(new Color(235, 224, 188));
+	    		cmp[i].setBackground(Color.BLACK);
 	    		cmp[i].addActionListener(actionListener);
 	    		add(cmp[i]);
 	    	}
@@ -407,21 +475,22 @@ public class Game extends JPanel implements ActionListener {
 					return;
 				} else if ((str[0] + " " + str[1]).equals("Walk here")) {
 					movePlayer(click, false);
-				}  else if (str[0].equals("Mine") || str[0].equals("Cut")) {
+				}  else if (str[0].equals("<html>Mine") || str[0].equals("<html>Cut")) {
 					movePlayer(click, true);
-				} else if (str[0].equals("Take")) {
+				} else if (str[0].equals("<html>Take")) {
 					click[2] = 1;
 					String t = "";
-    				for (int i = 1; i < str.length; i++) {
+    				for (int i = 3; i < str.length - 1; i++) {
+    					System.out.println("adding " + str[i]);
     					t += str[i];
-    					if (i != str.length - 1) {
+    					if (i != str.length - 2) {
     						t += " ";
     					}
     				}
     				player.pickUp(Item.getItemByName(t).getItemId(), click);
-				} else if (str[0].equals("Use")) {
+				} else if (str[0].equals("<html>Use")) {
 					player.getInv().highlightSlot(click[0]);
-				} else if (str[0].equals("Drop")) {
+				} else if (str[0].equals("<html>Drop")) {
 					player.dropSlot(click[0]);
 				}
 			}
@@ -438,24 +507,24 @@ public class Game extends JPanel implements ActionListener {
 	        } else if (e.getButton() == 1) {
 	        	String tmp = doPop(e, false, getMenuItems());
 	        	String str[] = tmp.split(" ");
-    			if ((str[0] + " " + str[1]).equals("Walk here")) {
+    			if ((str.length > 1) && (str[0] + " " + str[1]).equals("Walk here")) {
     				player.moveTo(click[0], click[1], click[2] == 1, click[3], click[4], false);
-    			} else if (str[0].equals("Mine") || str[0].equals("Cut")) {
+    			} else if (str[0].equals("<html>Mine") || str[0].equals("<html>Cut")) {
     				player.moveTo(click[0], click[1], click[2] == 1, click[3], click[4], true);
-    			} else if (str[0].equals("Take")) {
+    			} else if (str[0].equals("<html>Take")) {
     				System.out.println(click[0] + ",, " + click[1]);
     				click[2] = 1;
     				String t = "";
-    				for (int i = 1; i < str.length; i++) {
+    				for (int i = 3; i < str.length - 1; i++) {
     					t += str[i];
-    					if (i != str.length - 1) {
+    					if (i != str.length - 2) {
     						t += " ";
     					}
     				}
     				player.pickUp(Item.getItemByName(t).getItemId(), click);
-    			} else if (str[0].equals("Use")) {
+    			} else if (str[0].equals("<html>Use")) {
     				player.getInv().highlightSlot(click[0]);
-    			} else if (str[0].equals("Drop")) {
+    			} else if (str[0].equals("<html>Drop")) {
 					player.dropSlot(click[0]);
     			}
 	        }
@@ -500,15 +569,15 @@ public class Game extends JPanel implements ActionListener {
 			mouseLoc[0] = e.getX();
 			mouseLoc[1] = e.getY();
 			click = CollisionDetection.checkCollisionsTile(e.getButton(), e.getX(), e.getY(), state, board, player);
-			if (click[5] == 0) {
+			//if (click[5] == 0) {
 		    	String tmp = getMenuItems().get(0);
 		    	String str[] = tmp.split(" ");
-				if (!(str[0] + " " + str[1]).equals("Walk here")) {
+				if ((str.length > 1) && !(str[0] + " " + str[1]).equals("Walk here")) {
 					hoverText = tmp;
 				} else {
 					hoverText = "";
 				}
-			}
+			//}
 		}
 	}
 }

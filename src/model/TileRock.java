@@ -39,7 +39,7 @@ public class TileRock extends TileObject {
 	
 	private void deplete(BoardState state) {
 		this.rockType = pickRock(oldType - 1);
-		state.mapTiles[this.getXLoc()][this.getYLoc()] = this.rockType.getRockId();
+		state.objTiles[this.getXLoc()][this.getYLoc()] = this.rockType.getRockId();
 	}
 	
 	public Rock getRockType() {

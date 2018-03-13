@@ -41,7 +41,7 @@ public class TileTree extends TileObject {
 	
 	private void deplete(BoardState state) {
 		this.treeType = pickTree(oldType - 1);
-		state.mapTiles[this.getXLoc()][this.getYLoc()] = this.treeType.getTreeId();
+		state.objTiles[this.getXLoc()][this.getYLoc()] = this.treeType.getTreeId();
 	}
 	
 	public Tree getTreeType() {

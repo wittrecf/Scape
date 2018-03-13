@@ -133,6 +133,10 @@ public enum ImageEnum {
 		icons[50][1] = ImageEnum.ICONOAKLOGSHIGHLIGHT.getImg();
 	}
 	
+	public static BufferedImage scaleToDimensions(BufferedImage img, int newWidth, int newHeight) {
+		return DrawOps.scaleImgToSize(img, newWidth, newHeight);
+	}
+	
 	/**
 	 * Resets the scaledImg to the origImg (ie undoes any scaling of the image).
 	 */

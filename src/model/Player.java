@@ -213,7 +213,7 @@ public class Player {
 		for (int i = tmpX - len; i <= tmpX + len; i++) {
 			for (int j = tmpY - len; j <= tmpY + len; j++) {
 				if (!((i < 0) || (i >= state.mapColsNum) || (j < 0) || (j >= state.mapRowsNum))) {
-					if (state.mapTiles[i][j] == 1) {
+					if ((state.mapTiles[i][j] == 1) && (state.objTiles[i][j] == 0)) {
 						n = new Node(i, j);
 						if ((i == tmpX) && (j == tmpY)) {
 							//System.out.println("zero node at " + i + ", " + j);

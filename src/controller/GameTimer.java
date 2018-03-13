@@ -37,10 +37,10 @@ public class GameTimer extends TimerTask {
 		
 		for (int j = 0; j < state.mapRowsNum; j++) {
     		for (int i = 0; i < state.mapColsNum; i++) {
-    			if (state.mapTiles[i][j] >= 10 && state.mapTiles[i][j] < 50 && state.mapTiles[i][j] % 2 != 1) {
-    				state.mapTiles[i][j] = (double)Math.round((state.mapTiles[i][j] + (TileRock.pickRock((int) Math.floor(state.mapTiles[i][j])).getRespawnRate())) * 1000000d) / 1000000d;
-    			} else if (state.mapTiles[i][j] >= 50 && state.mapTiles[i][j] < 90 && state.mapTiles[i][j] % 2 != 1) {
-    				state.mapTiles[i][j] = (double)Math.round((state.mapTiles[i][j] + (TileTree.pickTree((int) Math.floor(state.mapTiles[i][j])).getRespawnRate())) * 1000000d) / 1000000d;
+    			if (state.objTiles[i][j] >= 10 && state.objTiles[i][j] < 50 && state.objTiles[i][j] % 2 != 1) {
+    				state.objTiles[i][j] = (double)Math.round((state.objTiles[i][j] + (TileRock.pickRock((int) Math.floor(state.objTiles[i][j])).getRespawnRate())) * 1000000d) / 1000000d;
+    			} else if (state.objTiles[i][j] >= 50 && state.objTiles[i][j] < 90 && state.objTiles[i][j] % 2 != 1) {
+    				state.objTiles[i][j] = (double)Math.round((state.objTiles[i][j] + (TileTree.pickTree((int) Math.floor(state.objTiles[i][j])).getRespawnRate())) * 1000000d) / 1000000d;
     			}
     		}
 		}
