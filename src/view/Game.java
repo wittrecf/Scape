@@ -9,14 +9,16 @@ import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.Insets;
 import java.awt.LayoutManager;
 import java.awt.Menu;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
@@ -25,23 +27,25 @@ import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Scanner;
 import java.util.Timer;
 
-import javax.swing.Action;
 import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.JTextPane;
 import javax.swing.KeyStroke;
-import javax.swing.border.Border;
+import javax.swing.border.EmptyBorder;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyleContext;
 
 import controller.CollisionDetection;
 import controller.GameTimer;
@@ -56,7 +60,7 @@ import model.TileRock;
 import model.TileTree;
 import model.Player;
 
-public class Game extends JPanel implements ActionListener {
+public class Game extends JPanel implements ActionListener, KeyListener {
 	
 	private boolean gameOver;
 	private Board board;
@@ -79,14 +83,17 @@ public class Game extends JPanel implements ActionListener {
 	public JLabel label;
 	
 	private JButton btnExit = new JButton();
-	private static GridBagLayout layout = new GridBagLayout();
-    private static GridBagConstraints c = new GridBagConstraints();
 	
 	private String mapArrayFile = "resources/mapArray.txt";
 	private String objArrayFile = "resources/objArray.txt";
 	
+	protected JTextField textField;
+    protected JTextPane textPane;
+    private final static String newline = "\n";
+	
 	public Game(MainController mainController) {
 		this.mainController = mainController;
+		this.setFocusable(true);
 		
     	board = new Board(mainController.getWidth(), mainController.getHeight());
     	
@@ -124,29 +131,38 @@ public class Game extends JPanel implements ActionListener {
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-    	
-    	label = new JLabel(hoverText);
-    	label.setForeground(new Color(235, 224, 188));
-    	label.setOpaque(true);
-    	label.setBackground(Color.BLACK);
-    	add(label);
 		
-		btnExit.setPreferredSize(new Dimension(ImageEnum.TILEGRASS.getWidth()*2, ImageEnum.TILEGRASS.getHeight()));
 		btnExit.setBackground(Color.WHITE);
 		btnExit.setForeground(Color.BLACK);
 		btnExit.setFont(new Font("TimesRoman", Font.BOLD, 20));
 		btnExit.setHorizontalTextPosition(JButton.CENTER);
 		btnExit.setVerticalTextPosition(JButton.CENTER);
 		btnExit.setText("Logout");
-		
-		setLayout(layout);
-        c.weightx = 0.1;
-        c.weighty = 0.1;
-    	c.anchor = GridBagConstraints.NORTHEAST;
-    	add(btnExit, c);
-    	c.anchor = GridBagConstraints.CENTER;
-		
+		btnExit.setBounds(mainController.getWidth() - btnExit.getPreferredSize().width, 0, btnExit.getPreferredSize().width, btnExit.getPreferredSize().height);
 		btnExit.addActionListener(this);
+		
+		textField = new JTextField(50);
+		textField.setBounds(0, mainController.getHeight() - textField.getPreferredSize().height, textField.getPreferredSize().width, textField.getPreferredSize().height);
+        textField.setSelectionEnd(10);
+		textField.addActionListener(this);
+ 
+        textPane = new JTextPane();
+        textPane.setPreferredSize(new Dimension(textField.getPreferredSize().width, 150));
+        textPane.setMargin(new Insets(5, 5, 5, 5));
+        textPane.setFocusable(false);
+        JScrollPane scrollPane = new JScrollPane(textPane);
+        scrollPane.setBounds(0, mainController.getHeight() - textField.getPreferredSize().height - textPane.getPreferredSize().height, textPane.getPreferredSize().width, textPane.getPreferredSize().height);
+		
+        label = new JLabel(hoverText);
+    	label.setForeground(new Color(235, 224, 188));
+    	label.setBackground(Color.BLACK);
+        
+		this.setLayout(null);
+		
+    	add(btnExit);
+    	add(textField);
+    	add(scrollPane);
+    	add(label);
 		
 		centerX = ((board.getWidth() - ImageEnum.TILEGRASS.getWidth()) / 2) / ImageEnum.TILEGRASS.getWidth();
     	centerY = ((board.getHeight() - ImageEnum.TILEGRASS.getHeight()) / 2) / ImageEnum.TILEGRASS.getHeight();
@@ -157,6 +173,7 @@ public class Game extends JPanel implements ActionListener {
 		// Then on your component(s)
 		this.addMouseListener(new PopClickListener());
 		this.addMouseMotionListener(new PopupMotionListener());
+		this.addKeyListener(this);
 		
 		this.getInputMap().put(KeyStroke.getKeyStroke("P"), "doSomething");
 		this.getActionMap().put("doSomething", new KeyType("P"));
@@ -278,10 +295,12 @@ public class Game extends JPanel implements ActionListener {
 				}
 				if (!hoverText.equals("")) {
 					label.setBorder(BorderFactory.createLineBorder(Color.GRAY, 2));
+					label.setOpaque(true);
 					label.setText(hoverText);
 					label.setBounds(mouseLoc[0] + 30 + xFar, mouseLoc[1] + 30 + yFar, label.getPreferredSize().width, label.getPreferredSize().height);
 				} else {
 					label.setBorder(null);
+					label.setOpaque(false);
 					label.setText(hoverText);
 				}
 			}
@@ -436,10 +455,52 @@ public class Game extends JPanel implements ActionListener {
 		if(event.getSource() == btnExit) {
 			this.shutdown();
 		}
+		
+		String text = textField.getText();
+		if (!text.equals("")) {
+			appendToPane(textPane, player.getUsername(), Color.GREEN);
+			appendToPane(textPane, ": " + text + newline, Color.GRAY);
+			textField.setText("");
+			textPane.setCaretPosition(textPane.getDocument().getLength());
+		}
+		this.requestFocusInWindow();
 	}
+	
+	private void appendToPane(JTextPane tp, String msg, Color c) {
+        StyleContext sc = StyleContext.getDefaultStyleContext();
+        AttributeSet aset = sc.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.Foreground, c);
+
+        aset = sc.addAttribute(aset, StyleConstants.FontFamily, "Lucida Console");
+        aset = sc.addAttribute(aset, StyleConstants.Alignment, StyleConstants.ALIGN_JUSTIFIED);
+
+        int len = tp.getDocument().getLength();
+        tp.setCaretPosition(len);
+        tp.setCharacterAttributes(aset, false);
+        tp.replaceSelection(msg);
+	}
+      
 	
 	public void movePlayer(int[] tmp, boolean interact) {
 		player.moveTo(tmp[0], tmp[1], tmp[2] == 1, tmp[3], tmp[4], interact);
+	}
+	
+	public void keyReleased(KeyEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void keyPressed(KeyEvent e) {
+		if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+			System.out.println("enter");
+			textField.requestFocusInWindow();
+		} else if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+			shutdown();
+		}
+	}
+
+	public void keyTyped(KeyEvent e) {
+		// TODO Auto-generated method stub
+		
 	}
 
 	public void mouseReleased(MouseEvent event) {}
@@ -459,7 +520,7 @@ public class Game extends JPanel implements ActionListener {
 	    		cmp[i].addActionListener(actionListener);
 	    		add(cmp[i]);
 	    	}
-	    	this.setLayout(new GridLayout(0, 1));
+	    	//this.setLayout(new GridLayout(0, 1));
 	    	if (this.getPreferredSize().width < 100) {
 	    		this.setPreferredSize(new Dimension(100, this.getPreferredSize().height));
 	    	}
