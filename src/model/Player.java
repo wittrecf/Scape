@@ -1,5 +1,6 @@
 package model;
 
+import java.awt.Color;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -13,6 +14,9 @@ import java.util.Iterator;
 import java.util.Scanner;
 import java.util.Stack;
 
+import javax.swing.JTextPane;
+
+import view.Game;
 import view.ImageEnum;
 
 public class Player {
@@ -32,8 +36,14 @@ public class Player {
 	private boolean transfer = false;
 	private boolean doInteract;
 	private Inventory inv;
+	private JTextPane chatbox;
+	private int updateState = 0;
+	private static int skillNum = 3;
+	private int maxHealth = 100;
+	private int currHealth;
+	private int damage = 1;
 	
-	private int[] statXP = new int[2];
+	private int[] statXP = new int[skillNum];
 	
 	private int[][] dir = {{1, 1},
 			   			   {1, -1},
@@ -57,10 +67,13 @@ public class Player {
 		this.xLoc = DEFAULTX;
 		this.yLoc = DEFAULTY;
 		this.inv = new Inventory(width, height);
+		this.currHealth = this.maxHealth;
 		inv.setDefaultInventory();
-		this.statXP[0] = 0;
-		this.statXP[1] = 0;
+		for (int j = 0; j < skillNum; j++) {
+			this.statXP[j] = 0;
+		}
 		this.path = new ArrayList<Node>();
+		this.chatbox = new JTextPane();
 		try {
 			writePlayerData();
 			Files.write(Paths.get(userFile), (this.username + System.getProperty("line.separator")).getBytes(), StandardOpenOption.APPEND);
@@ -75,14 +88,16 @@ public class Player {
 		this.xLoc = Integer.parseInt(arr[2]);
 		this.yLoc = Integer.parseInt(arr[3]);
 		this.inv = new Inventory(width, height);
+		this.currHealth = this.maxHealth; //TEMP------
 		for (int i = 0; i < Inventory.getInventorySize(); i++) {
 			this.inv.setSlot(i, Integer.parseInt(arr[4 + i]));
 		}
-		for (int j = 0; j < 2; j++) {
+		for (int j = 0; j < skillNum; j++) {
 			this.statXP[j] = Integer.parseInt(arr[4 + Inventory.getInventorySize() + j]);
 		}
 		this.target = null;
 		this.path = new ArrayList<Node>();
+		this.chatbox = new JTextPane();
 	}
 	
 	private void makePassword() {
@@ -156,7 +171,7 @@ public class Player {
 	
 	public static Player loadPlayer(String user, int width, int height) throws FileNotFoundException, UnsupportedEncodingException {
 		Scanner inFile = null;
-		String[] playerArr = new String[4 + Inventory.getInventorySize() + 2];
+		String[] playerArr = new String[4 + Inventory.getInventorySize() + skillNum];
 		try {
 			inFile = new Scanner(new File(playerDataFile));
 		} catch (FileNotFoundException e) {
@@ -183,7 +198,7 @@ public class Player {
 				for (int i = 0; i < Inventory.getInventorySize(); i++) {
 					playerArr[4 + i] = arr[4 + i];
 				}
-				for (int j = 0; j < 2; j++) {
+				for (int j = 0; j < skillNum; j++) {
 					playerArr[4 + Inventory.getInventorySize() + j] = arr[4 + Inventory.getInventorySize() + j];
 				}
 				return new Player(playerArr, width, height);
@@ -410,26 +425,36 @@ public class Player {
 			statXP[0] += xp;
 		} else if (type.equals("TileTree")) {
 			statXP[1] += xp;
+		} else if (type.equals("TileFishingSpot")) {
+			statXP[2] += xp;
 		}
 	}
 	
-	public void interact(int x, int y, int[] t) {
+	public void interact() {
 		if (checkAdjacency(false, new int[] {xLoc, yLoc}, target)) {
+			System.out.println(target[0] + "-" + xLoc + "+" + 15);
+			System.out.println(target[1] + "-" + yLoc + "+" + 7);
+			System.out.println((target[0] - xLoc + 15) + ", " + (target[1] - yLoc + 7));
 			if (this.inv.searchInventorySpace()) {
-				System.out.println(state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().getStarted());
-				int[] tmp = state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().start(state);
+				System.out.println(state.tiles.get(target[1] - yLoc + 7).get(target[0] - xLoc + 15).getObj().getStarted());
+				int[] tmp = state.tiles.get(target[1] - yLoc + 7)
+						.get(target[0] - xLoc + 15)
+						.getObj()
+						.start(state);
 				if (tmp != null) {
 					inv.addItem(tmp[0]);
-					addXP(state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().getType(), tmp[1]);
+					addXP(state.tiles.get(target[1] - yLoc + 7).get(target[0] - xLoc + 15).getObj().getType(), tmp[1]);
 					path.clear();
 					target = null;
 				} else {
-					System.out.println(state.tiles.get(target[3]/ImageEnum.TILEGRASS.getWidth() + 1).get(target[2]/ImageEnum.TILEGRASS.getHeight() + 1).getObj().getDepleted());
+					System.out.println(state.tiles.get(target[1] - yLoc + 7).get(target[0] - xLoc + 15).getObj().getDepleted());
+					Game.printText(chatbox, state.tiles.get(target[1] - yLoc + 7).get(target[0] - xLoc + 15).getObj().getDepleted() + "\n", Color.GRAY);
 					path.clear();
 					target = null;
 				}
 			} else {
 				System.out.println("Your inventory is full.");
+				Game.printText(chatbox, "Your inventory is full.\n", Color.GRAY);
 				path.clear();
 				target = null;
 			}
@@ -472,9 +497,11 @@ public class Player {
 				this.yDir = 0;
 				//System.out.println("d");
 				//System.out.println("moved to " + xLoc + ", " + yLoc);
+				updateState = -1;
 			}
-		} else if ((target != null) && doInteract) {
-			interact(xLoc, yLoc, target);
+		} else if ((target != null) && doInteract) {// && (updateState == 1)) {
+			interact();
+			updateState = 0;
 		} else if ((pickItem > 0) && (target != null)) {
 			if (checkAdjacency(false, new int[] {xLoc, yLoc}, target)) {
 			inv.addItem(pickItem);
@@ -484,6 +511,14 @@ public class Player {
 				System.out.println("is " + xLoc + ", " + yLoc + " adjacent to " + target[0] + ", " + target[1]);
 			}
 		}
+	}
+	
+	public void damage(int dmg) {
+		this.currHealth -= dmg;
+		if (this.currHealth < 0) {
+			this.currHealth = 0;
+		}
+		Game.printText(chatbox, "Health is now: " + this.currHealth + "\n", Color.GRAY);
 	}
 	
 	public void pickUp(int item, int[] tmp) {
@@ -517,7 +552,7 @@ public class Player {
 		for (int i = 0; i < Inventory.getInventorySize(); i++) {
 			s += inv.getSlot(i) + " ";
 		}
-		for (int j = 0; j < 2; j++) {
+		for (int j = 0; j < skillNum; j++) {
 			s += statXP[j] + " ";
 		}
 		return s;
@@ -561,5 +596,29 @@ public class Player {
 	
 	public void setInteract(boolean b) {
 		doInteract = b;
+	}
+	
+	public JTextPane getChatbox() {
+		return this.chatbox;
+	}
+	
+	public void setUpdateState(int i) {
+		this.updateState = i;
+	}
+	
+	public int getUpdateState() {
+		return this.updateState;
+	}
+	
+	public int getMaxHealth() {
+		return this.maxHealth;
+	}
+	
+	public int getCurrHealth() {
+		return this.currHealth;
+	}
+	
+	public int getDamage() {
+		return this.damage;
 	}
 }

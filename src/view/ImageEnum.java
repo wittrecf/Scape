@@ -18,16 +18,20 @@ public enum ImageEnum {
 	ROCKCLAY("RockClay.png"),
 	TREENULL("TreeNull.png"),
 	TREEOAK("TreeOak.png"),
+	FISHINGSPOTNULL("FishingSpotNull.png"),
+	FISHINGSPOTSHRIMP("FishingSpotShrimp.png"),
 	EXIT_DEFAULT("btn_default.png"),
 	INVENTORY("Inventory.png"),
 	ICONBLANK("IconBlank.png"),
 	ICONCLAYORE("IconClayOre.png"),
 	ICONCLAYOREHIGHLIGHT("IconClayOreHighlight.png"),
 	ICONOAKLOGS("IconOakLogs.png"),
-	ICONOAKLOGSHIGHLIGHT("IconOakLogsHighlight.png");
+	ICONOAKLOGSHIGHLIGHT("IconOakLogsHighlight.png"),
+	ICONRAWSHRIMP("IconRawShrimp.png"),
+	ICONRAWSHRIMPHIGHLIGHT("IconRawShrimpHighlight.png");
 	
 	private BufferedImage origImg, scaledImg;
-	private static BufferedImage[][] icons = new BufferedImage[60][2];
+	private static BufferedImage[][] icons = new BufferedImage[100][2];
 	private final String filePath;
 	private final String directory = "resources/";
 	
@@ -131,6 +135,8 @@ public enum ImageEnum {
 		icons[10][1] = ImageEnum.ICONCLAYOREHIGHLIGHT.getImg();
 		icons[50][0] = ImageEnum.ICONOAKLOGS.getImg();
 		icons[50][1] = ImageEnum.ICONOAKLOGSHIGHLIGHT.getImg();
+		icons[90][0] = ImageEnum.ICONRAWSHRIMP.getImg();
+		icons[90][1] = ImageEnum.ICONRAWSHRIMPHIGHLIGHT.getImg();
 	}
 	
 	public static BufferedImage scaleToDimensions(BufferedImage img, int newWidth, int newHeight) {

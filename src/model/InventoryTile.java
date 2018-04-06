@@ -29,6 +29,7 @@ public class InventoryTile {
 		case 0: return Item.NULL;
 		case 10: return Item.CLAYORE;
 		case 50: return Item.OAKLOG;
+		case 90: return Item.RAWSHRIMP;
 		default: return null;
 		}
 	}

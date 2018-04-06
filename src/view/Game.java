@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
@@ -26,6 +27,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.Timer;
@@ -53,12 +56,15 @@ import controller.MainController;
 import model.Board;
 import model.BoardState;
 import model.BoardTile;
+import model.Enemy;
 import model.InventoryTile;
 import model.Item;
 import model.KeyType;
+import model.NPC;
 import model.TileRock;
 import model.TileTree;
 import model.Player;
+import model.TileFishingSpot;
 
 public class Game extends JPanel implements ActionListener, KeyListener {
 	
@@ -79,6 +85,8 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 	public int[] click;
 	public int[] mouseLoc;
 	public String hoverText = "";
+	public String spokenText = "";
+	public double spokenTime = 0;
 	
 	public JLabel label;
 	
@@ -89,6 +97,7 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 	
 	protected JTextField textField;
     protected JTextPane textPane;
+    protected JScrollPane scrollPane;
     private final static String newline = "\n";
 	
 	public Game(MainController mainController) {
@@ -99,6 +108,14 @@ public class Game extends JPanel implements ActionListener, KeyListener {
     	
     	state = new BoardState();
     	state.board = board;
+    	
+    	state.npcTiles[35][51] = new ArrayList<NPC>();
+    	state.npcTiles[35][51].add(new NPC("Dave", ImageEnum.PLAYER.getImg()));
+    	state.npcTiles[35][51].get(0).setTalkable(true);
+    	
+    	state.npcTiles[35][52] = new ArrayList<NPC>();
+    	state.npcTiles[35][52].add(new Enemy("Goblin General", ImageEnum.PLAYER.getImg(), 10, 1));
+    	state.npcTiles[35][52].get(0).setTalkable(true);
     	
     	scaleScreenItems();
     	
@@ -143,16 +160,21 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 		
 		textField = new JTextField(50);
 		textField.setBounds(0, mainController.getHeight() - textField.getPreferredSize().height, textField.getPreferredSize().width, textField.getPreferredSize().height);
-        textField.setSelectionEnd(10);
+        textField.setBackground(Color.LIGHT_GRAY);
+        textField.setOpaque(true);
+		textField.setSelectionEnd(10);
 		textField.addActionListener(this);
  
-        textPane = new JTextPane();
+        textPane = player.getChatbox();
         textPane.setPreferredSize(new Dimension(textField.getPreferredSize().width, 150));
         textPane.setMargin(new Insets(5, 5, 5, 5));
         textPane.setFocusable(false);
-        JScrollPane scrollPane = new JScrollPane(textPane);
+        textPane.setBackground(Color.LIGHT_GRAY);
+        textPane.setOpaque(true);
+        scrollPane = new JScrollPane(textPane);
         scrollPane.setBounds(0, mainController.getHeight() - textField.getPreferredSize().height - textPane.getPreferredSize().height, textPane.getPreferredSize().width, textPane.getPreferredSize().height);
-		
+        scrollPane.setPreferredSize(new Dimension(textField.getPreferredSize().width, 150));
+
         label = new JLabel(hoverText);
     	label.setForeground(new Color(235, 224, 188));
     	label.setBackground(Color.BLACK);
@@ -234,6 +256,8 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 		    			block.setObj(new TileRock(x, y, state.objTiles[x][y]));
 		    		} else if (state.objTiles[x][y] >= 50 && state.objTiles[x][y] < 90) {
 		    			block.setObj(new TileTree(x, y, state.objTiles[x][y]));
+		    		} else if (state.objTiles[x][y] >= 90 && state.objTiles[x][y] < 130) {
+		    			block.setObj(new TileFishingSpot(x, y, state.objTiles[x][y]));
 		    		} else {
 		    			block.setObj(null);
 		    		}
@@ -247,6 +271,8 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 		    				g2.drawImage(((TileRock) block.getObj()).getRockType().getImg(), block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), null);
 		    			} else if (block.getObj().getType().equals("TileTree")) {
 		    				g2.drawImage(((TileTree) block.getObj()).getTreeType().getImg(), block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), null);
+		    			} else if (block.getObj().getType().equals("TileFishingSpot")) {
+		    				g2.drawImage(((TileFishingSpot) block.getObj()).getFishingSpotType().getImg(), block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), null);
 		    			}
 		    		}
 		    		if (state.itemTiles[x][y] != null) {
@@ -254,11 +280,22 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 		    				g2.drawImage(ImageEnum.scaleToDimensions(ImageEnum.getIcons()[state.itemTiles[x][y].get(i)][0], ImageEnum.TILEGRASS.getWidth(), ImageEnum.TILEGRASS.getHeight()), block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), null);
 		    			}
 		    		}
+		    		if (state.npcTiles[x][y] != null) {
+		    			for (int i = 0; i < state.npcTiles[x][y].size(); i++) {
+		    				g2.drawImage(ImageEnum.scaleToDimensions(state.npcTiles[x][y].get(i).getImg(), ImageEnum.TILEGRASS.getWidth(), ImageEnum.TILEGRASS.getHeight()), block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), null);
+		    				if ((state.npcTiles[x][y].get(i) instanceof Enemy) && ((Enemy) (state.npcTiles[x][y].get(i))).getInCombat()) {
+		    					g2.setColor(Color.RED);
+		    					g2.fillRect(block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), BoardTile.getWidth(), 10);
+		    					g2.setColor(Color.GREEN);
+		    					g2.fillRect(block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), (int) ((double) player.getCurrHealth() /  (double) player.getMaxHealth() * (BoardTile.getWidth())), 10);
+		    				}
+		    			}
+		    		}
 			    	g2.setColor(Color.WHITE);
-		    		g2.setFont(new Font("TimesRoman", Font.PLAIN, (int)(0.35*fontSize)));
-		    		//g2.drawString(block.getXLoc() / ImageEnum.TILEGRASS.getWidth() + ":" + block.getYLoc() / ImageEnum.TILEGRASS.getHeight(), block.getXLoc() + 15 + player.getXOff(), block.getYLoc() + 15 + player.getYOff());
+		    		g2.setFont(new Font("TimesRoman", Font.PLAIN, (int)(0.5*fontSize)));
+		    		g2.drawString(block.getXLoc() / ImageEnum.TILEGRASS.getWidth() + ":" + block.getYLoc() / ImageEnum.TILEGRASS.getHeight(), block.getXLoc() + 15 + player.getXOff(), block.getYLoc() + 15 + player.getYOff());
 		    		g2.setColor(Color.YELLOW);
-		    		//g2.drawString(block.getXCoord() + ":" + block.getYCoord(), block.getXLoc() + 15 + player.getXOff(), block.getYLoc() + 40 + player.getYOff());
+		    		g2.drawString(block.getXCoord() + ":" + block.getYCoord(), block.getXLoc() + 15 + player.getXOff(), block.getYLoc() + 40 + player.getYOff());
 					x++;
 		    	}
 		    	y++;
@@ -305,8 +342,28 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 				}
 			}
 			
-			g2.drawString("Mining: " + player.getState(0), 0, 10);
-			g2.drawString("Woodcutting: " + player.getState(1), 0, 30);
+			g2.setColor(Color.RED);
+			g2.fillRect(0, (int) (mainController.getHeight() - textField.getPreferredSize().getHeight() - scrollPane.getPreferredSize().getHeight() - 30), 200, 30);
+			
+			if (player.getCurrHealth() > 0) {
+				g2.setColor(Color.GREEN);
+				g2.fillRect(0, (int) (mainController.getHeight() - textField.getPreferredSize().getHeight() - scrollPane.getPreferredSize().getHeight() - 30), (int) ((double) player.getCurrHealth() /  (double) player.getMaxHealth() * 200), 30);
+			}
+			
+			g2.setColor(Color.YELLOW);
+			g2.drawString("Mining: " + player.getState(0), 5, 15);
+			g2.drawString("Woodcutting: " + player.getState(1), 5, 35);
+			g2.drawString("Fishing: " + player.getState(2), 5, 55);
+			
+			FontMetrics fm = this.getFontMetrics(new Font("TimesRoman", Font.PLAIN, (int)(0.5*fontSize)));
+			g2.setColor(Color.WHITE);
+			
+			g2.drawString(spokenText,((state.boardColsNum - 3) / 2) * ImageEnum.TILEGRASS.getWidth() + (int) (.5 * ImageEnum.TILEGRASS.getWidth()) - fm.stringWidth(spokenText)/2, ((state.boardRowsNum - 3) / 2) * ImageEnum.TILEGRASS.getHeight() + (int) (.05 * ImageEnum.TILEGRASS.getHeight()));
+			
+			if (player.getUpdateState() == -1) {
+				player.setUpdateState(1);
+			}
+			//System.out.println("updatestate: " + player.getUpdateState());
 		}
 	}
 	
@@ -433,10 +490,22 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 				s.add("<html>Mine <font color=\"#ffff00\"> " + TileRock.pickRock((int) Math.floor(state.objTiles[click[0]][click[1]])).getRockName() + " </font></html>");
 			} else if ((state.objTiles[click[0]][click[1]] >= 50) && state.objTiles[click[0]][click[1]] < 90) {
 				s.add("<html>Cut <font color=\"#ffff00\"> " + TileTree.pickTree((int) Math.floor(state.objTiles[click[0]][click[1]])).getTreeName() + " </font></html>");
+			} else if ((state.objTiles[click[0]][click[1]] >= 90) && state.objTiles[click[0]][click[1]] < 130) {
+				s.add("<html>Fish <font color=\"#ffff00\"> " + TileFishingSpot.pickFishingSpot((int) Math.floor(state.objTiles[click[0]][click[1]])).getFishingSpotName() + " </font></html>");
 			}
 			if (state.itemTiles[click[0]][click[1]] != null) {
 				for (int i = state.itemTiles[click[0]][click[1]].size() - 1; i >= 0; i--) {
 					s.add("<html>Take <font color=\"#f8d56b\"> " + Item.getItemById(state.itemTiles[click[0]][click[1]].get(i)).getItemName() + " </font></html>");
+				}
+			}
+			if (state.npcTiles[click[0]][click[1]] != null) {
+				for (int i = state.npcTiles[click[0]][click[1]].size() - 1; i >= 0; i--) {
+					if (state.npcTiles[click[0]][click[1]].get(i) instanceof Enemy) {
+						s.add("<html>Attack <font color=\"#f8d56b\"> " + state.npcTiles[click[0]][click[1]].get(i).getName() + " </font></html>");
+					}
+					if (state.npcTiles[click[0]][click[1]].get(i).getTalkable()) {
+						s.add("<html>Talk-to <font color=\"#f8d56b\"> " + state.npcTiles[click[0]][click[1]].get(i).getName() + " </font></html>");
+					}
 				}
 			}
 			s.add("Walk here");
@@ -451,22 +520,49 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 		return s;
 	}
 	
+	private String formatText(String text) {
+		text = text.replaceAll(" i ", " I ");
+		text = text.replaceFirst(text.substring(0, 1), text.substring(0, 1).toUpperCase());
+		String[] tmp = text.split(" ");
+		for (int j = 0; j < tmp.length - 1; j++) {
+			if (tmp[j].endsWith(".")) {
+				tmp[j+1] = tmp[j+1].substring(0, 1).toUpperCase() + tmp[j+1].substring(1, tmp[j+1].length());
+			}
+		}
+		if (text.endsWith(" i")) {
+			tmp[tmp.length - 1] = "I";
+		}
+		text = "";
+		for (int i = 0; i < tmp.length; i++) {
+			text += tmp[i].substring(0, 1) + tmp[i].substring(1, tmp[i].length()).toLowerCase();
+			if (i != tmp.length - 1) {
+				text += " ";
+			}
+		}
+		return text;
+	}
+	
 	public void actionPerformed(ActionEvent event) {
 		if(event.getSource() == btnExit) {
 			this.shutdown();
 		}
 		
 		String text = textField.getText();
+		text = formatText(text);
+		
 		if (!text.equals("")) {
-			appendToPane(textPane, player.getUsername(), Color.GREEN);
-			appendToPane(textPane, ": " + text + newline, Color.GRAY);
+			appendToPane(textPane, "[" + new SimpleDateFormat("HH:mm").format(new Timestamp(System.currentTimeMillis())) + "] ", Color.BLACK);
+			appendToPane(textPane, player.getUsername(), Color.BLUE);
+			appendToPane(textPane, ": " + text + newline, Color.BLACK);
+			spokenText = text;
+			spokenTime = System.currentTimeMillis();
 			textField.setText("");
 			textPane.setCaretPosition(textPane.getDocument().getLength());
 		}
 		this.requestFocusInWindow();
 	}
 	
-	private void appendToPane(JTextPane tp, String msg, Color c) {
+	private static void appendToPane(JTextPane tp, String msg, Color c) {
         StyleContext sc = StyleContext.getDefaultStyleContext();
         AttributeSet aset = sc.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.Foreground, c);
 
@@ -477,6 +573,10 @@ public class Game extends JPanel implements ActionListener, KeyListener {
         tp.setCaretPosition(len);
         tp.setCharacterAttributes(aset, false);
         tp.replaceSelection(msg);
+	}
+	
+	public static void printText(JTextPane tp, String msg, Color c) {
+		appendToPane(tp, msg, c);
 	}
       
 	
@@ -495,6 +595,8 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 			textField.requestFocusInWindow();
 		} else if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
 			shutdown();
+		} else if (e.getKeyCode() == KeyEvent.VK_5) {
+			player.damage(10);
 		}
 	}
 
@@ -536,7 +638,7 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 					return;
 				} else if ((str[0] + " " + str[1]).equals("Walk here")) {
 					movePlayer(click, false);
-				}  else if (str[0].equals("<html>Mine") || str[0].equals("<html>Cut")) {
+				}  else if (str[0].equals("<html>Mine") || str[0].equals("<html>Cut") || str[0].equals("<html>Fish")) {
 					movePlayer(click, true);
 				} else if (str[0].equals("<html>Take")) {
 					click[2] = 1;
@@ -553,6 +655,24 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 					player.getInv().highlightSlot(click[0]);
 				} else if (str[0].equals("<html>Drop")) {
 					player.dropSlot(click[0]);
+				} else if (str[0].equals("<html>Attack")) {
+					click[2] = 1;
+					String t = "";
+					for (int i = 3; i < str.length - 1; i++) {
+    					System.out.println("adding " + str[i]);
+    					t += str[i];
+    					if (i != str.length - 2) {
+    						t += " ";
+    					}
+    				}
+					for (int i = 0; i < state.npcTiles[click[0]][click[1]].size(); i ++) {
+						if (state.npcTiles[click[0]][click[1]].get(i).getName().equals(t) && (state.npcTiles[click[0]][click[1]].get(i) instanceof Enemy)) {
+							((Enemy) state.npcTiles[click[0]][click[1]].get(i)).damage(player.getDamage());
+							return;
+						}
+					}
+				} else if (str[0].equals("<html>Talk-to")) {
+					System.out.println("talk");
 				}
 			}
 		}
@@ -570,7 +690,7 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 	        	String str[] = tmp.split(" ");
     			if ((str.length > 1) && (str[0] + " " + str[1]).equals("Walk here")) {
     				player.moveTo(click[0], click[1], click[2] == 1, click[3], click[4], false);
-    			} else if (str[0].equals("<html>Mine") || str[0].equals("<html>Cut")) {
+    			} else if (str[0].equals("<html>Mine") || str[0].equals("<html>Cut") || str[0].equals("<html>Fish")) {
     				player.moveTo(click[0], click[1], click[2] == 1, click[3], click[4], true);
     			} else if (str[0].equals("<html>Take")) {
     				System.out.println(click[0] + ",, " + click[1]);
@@ -587,7 +707,25 @@ public class Game extends JPanel implements ActionListener, KeyListener {
     				player.getInv().highlightSlot(click[0]);
     			} else if (str[0].equals("<html>Drop")) {
 					player.dropSlot(click[0]);
-    			}
+    			} else if (str[0].equals("<html>Attack")) {
+    				click[2] = 1;
+					String t = "";
+					for (int i = 3; i < str.length - 1; i++) {
+    					System.out.println("adding " + str[i]);
+    					t += str[i];
+    					if (i != str.length - 2) {
+    						t += " ";
+    					}
+    				}
+					for (int i = 0; i < state.npcTiles[click[0]][click[1]].size(); i ++) {
+						if (state.npcTiles[click[0]][click[1]].get(i).getName().equals(t) && (state.npcTiles[click[0]][click[1]].get(i) instanceof Enemy)) {
+							((Enemy) state.npcTiles[click[0]][click[1]].get(i)).damage(player.getDamage());
+							return;
+						}
+					}
+				} else if (str[0].equals("<html>Talk-to")) {
+					System.out.println("talk");
+				}
 	        }
 		}
 		
@@ -610,7 +748,19 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 	    private String doPop(MouseEvent e, boolean doDisplay, ArrayList<String> str){
 	        menu = new PopUpDemo(str);
 	        if (doDisplay) {
-	        	menu.show(e.getComponent(), (int) (e.getX() - menu.getPreferredSize().getWidth()/2), e.getY());
+	        	int xFar;
+	        	if ((mouseLoc[0] + menu.getPreferredSize().getWidth()/2) > mainController.getWidth()) {
+					xFar = (int) (mainController.getWidth() - (mouseLoc[0] + menu.getPreferredSize().getWidth()/2));
+				} else {
+					xFar = 0;
+				}
+	        	int yFar;
+	        	if ((mouseLoc[1] + menu.getPreferredSize().getHeight()) > mainController.getHeight()) {
+					yFar = (int) (mainController.getHeight() - (mouseLoc[1] + menu.getPreferredSize().getHeight()));
+				} else {
+					yFar = 0;
+				}
+	        	menu.show(e.getComponent(), (int) (e.getX() - menu.getPreferredSize().getWidth()/2 + xFar), e.getY() + yFar );
 	        	menu.setVisible(true);
 	        	return null;
 	        } else {
