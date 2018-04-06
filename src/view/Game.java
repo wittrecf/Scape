@@ -72,7 +72,7 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 	private Board board;
 	private Timer timer;
 	private BoardState state;
-	private Player player;
+	public Player player;
 	private MainController mainController;
 	
 	private int fontSize;
@@ -110,12 +110,15 @@ public class Game extends JPanel implements ActionListener, KeyListener {
     	state.board = board;
     	
     	state.npcTiles[35][51] = new ArrayList<NPC>();
-    	state.npcTiles[35][51].add(new NPC("Dave", ImageEnum.PLAYER.getImg()));
+    	state.npcTiles[35][51].add(new NPC("Dave", ImageEnum.PLAYER.getImg(), 35, 51));
     	state.npcTiles[35][51].get(0).setTalkable(true);
     	
     	state.npcTiles[35][52] = new ArrayList<NPC>();
-    	state.npcTiles[35][52].add(new Enemy("Goblin General", ImageEnum.PLAYER.getImg(), 10, 1));
-    	state.npcTiles[35][52].get(0).setTalkable(true);
+    	state.npcTiles[35][52].add(new Enemy("Goblin General", ImageEnum.PLAYER.getImg(), 35, 52, 10, 1));
+    	state.npcTiles[35][52].get(0).setTalkable(false);
+    	((Enemy) state.npcTiles[35][52].get(0)).addDrop(10);
+    	((Enemy) state.npcTiles[35][52].get(0)).addDrop(50);
+    	((Enemy) state.npcTiles[35][52].get(0)).addDrop(90);
     	
     	scaleScreenItems();
     	
@@ -282,12 +285,20 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 		    		}
 		    		if (state.npcTiles[x][y] != null) {
 		    			for (int i = 0; i < state.npcTiles[x][y].size(); i++) {
-		    				g2.drawImage(ImageEnum.scaleToDimensions(state.npcTiles[x][y].get(i).getImg(), ImageEnum.TILEGRASS.getWidth(), ImageEnum.TILEGRASS.getHeight()), block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), null);
-		    				if ((state.npcTiles[x][y].get(i) instanceof Enemy) && ((Enemy) (state.npcTiles[x][y].get(i))).getInCombat()) {
-		    					g2.setColor(Color.RED);
-		    					g2.fillRect(block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), BoardTile.getWidth(), 10);
-		    					g2.setColor(Color.GREEN);
-		    					g2.fillRect(block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), (int) ((double) player.getCurrHealth() /  (double) player.getMaxHealth() * (BoardTile.getWidth())), 10);
+		    				if (state.npcTiles[x][y].get(i) != null) {
+			    				g2.drawImage(ImageEnum.scaleToDimensions(state.npcTiles[x][y].get(i).getImg(), ImageEnum.TILEGRASS.getWidth(), ImageEnum.TILEGRASS.getHeight()), block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), null);
+			    				if ((state.npcTiles[x][y].get(i) instanceof Enemy) && ((Enemy) (state.npcTiles[x][y].get(i))).getInCombatWith() != null) {
+			    					g2.setColor(Color.RED);
+			    					g2.fillRect(block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), BoardTile.getWidth(), 10);
+			    					g2.setColor(Color.GREEN);
+			    					g2.fillRect(block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), (int) ((double) ((Enemy) (state.npcTiles[x][y].get(i))).getCurrHealth() /  (double) ((Enemy) (state.npcTiles[x][y].get(i))).getMaxHealth() * (BoardTile.getWidth())), 10);
+			    				}
+			    			} else {
+		    					state.npcTiles[x][y].remove(state.npcTiles[x][y].size() - 1);
+    							if (state.npcTiles[x][y].size() == 0) {
+    								state.npcTiles[x][y] = null;
+    							}
+    							return;
 		    				}
 		    			}
 		    		}
@@ -633,6 +644,7 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 		public void actionPerformed(ActionEvent event) {
 			String tmp = event.getActionCommand();
 			String str[] = tmp.split(" ");
+			player.attack(null);
 			if (str.length > 0) {
 				if (str[0].equals("Cancel")) {
 					return;
@@ -667,8 +679,7 @@ public class Game extends JPanel implements ActionListener, KeyListener {
     				}
 					for (int i = 0; i < state.npcTiles[click[0]][click[1]].size(); i ++) {
 						if (state.npcTiles[click[0]][click[1]].get(i).getName().equals(t) && (state.npcTiles[click[0]][click[1]].get(i) instanceof Enemy)) {
-							((Enemy) state.npcTiles[click[0]][click[1]].get(i)).damage(player.getDamage());
-							return;
+							player.setInCombatWith((Enemy) state.npcTiles[click[0]][click[1]].get(i));
 						}
 					}
 				} else if (str[0].equals("<html>Talk-to")) {
@@ -688,6 +699,7 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 	        } else if (e.getButton() == 1) {
 	        	String tmp = doPop(e, false, getMenuItems());
 	        	String str[] = tmp.split(" ");
+	        	player.attack(null);
     			if ((str.length > 1) && (str[0] + " " + str[1]).equals("Walk here")) {
     				player.moveTo(click[0], click[1], click[2] == 1, click[3], click[4], false);
     			} else if (str[0].equals("<html>Mine") || str[0].equals("<html>Cut") || str[0].equals("<html>Fish")) {
@@ -719,8 +731,7 @@ public class Game extends JPanel implements ActionListener, KeyListener {
     				}
 					for (int i = 0; i < state.npcTiles[click[0]][click[1]].size(); i ++) {
 						if (state.npcTiles[click[0]][click[1]].get(i).getName().equals(t) && (state.npcTiles[click[0]][click[1]].get(i) instanceof Enemy)) {
-							((Enemy) state.npcTiles[click[0]][click[1]].get(i)).damage(player.getDamage());
-							return;
+							player.setInCombatWith((Enemy) state.npcTiles[click[0]][click[1]].get(i));
 						}
 					}
 				} else if (str[0].equals("<html>Talk-to")) {

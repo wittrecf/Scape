@@ -8,12 +8,16 @@ public class NPC {
 	private BufferedImage img;
 	private int id;
 	private static int npcCount = 0;
+	private int xLoc;
+	private int yLoc;
 	
-	public NPC(String s, BufferedImage i) {
+	public NPC(String s, BufferedImage i, int x, int y) {
 		this.name = s;
 		this.img = i;
 		this.id = npcCount;
-		this.npcCount++;
+		this.xLoc = x;
+		this.yLoc = y;
+		NPC.npcCount++;
 	}
 
 	public boolean getTalkable() {
@@ -38,5 +42,13 @@ public class NPC {
 	
 	public int getID() {
 		return this.id;
+	}
+	
+	public int getXLoc() {
+		return this.xLoc;
+	}
+	
+	public int getYLoc() {
+		return this.yLoc;
 	}
 }

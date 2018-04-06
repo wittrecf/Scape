@@ -1,11 +1,14 @@
 package controller;
 
+import java.awt.Color;
 import java.sql.Time;
+import java.util.ArrayList;
 import java.util.TimerTask;
 
 import model.Board;
 import model.BoardState;
 import model.Enemy;
+import model.Item;
 import model.Player;
 import model.TileFishingSpot;
 import model.TileRock;
@@ -35,6 +38,9 @@ public class GameTimer extends TimerTask {
 			if ((tmpTime - startTime) % 1 == 0) {
 				p.move();
 			}
+			if ((p.getInCombatWith() != null) && (tmpTime - p.getAttackTime() > p.getAttackSpeed()*100)) {
+				p.attack(p.getInCombatWith());
+			}
 		}
 		
 		if (((tmpTime - game.spokenTime) > 3000) && !game.spokenText.equals("")) {
@@ -52,9 +58,27 @@ public class GameTimer extends TimerTask {
     			}
     			if (state.npcTiles[i][j] != null) {
     				for (int x = 0; x < state.npcTiles[i][j].size(); x++) {
-    					if ((state.npcTiles[i][j].get(x) instanceof Enemy) && ((Enemy) (state.npcTiles[i][j].get(x))).getCurrHealth() <= 0) {
-    						state.npcTiles[i][j].remove(x);
-    						x = 0;
+    					if (state.npcTiles[i][j].get(x) instanceof Enemy) {
+    						if (((Enemy) (state.npcTiles[i][j].get(x))).getCurrHealth() <= 0) {
+    							if (state.itemTiles[i][j] == null) {
+    								state.itemTiles[i][j] = new ArrayList<Integer>();
+    							}
+    							int drop = ((Enemy) (state.npcTiles[i][j].get(x))).die();
+    							state.itemTiles[i][j].add(drop);
+    							Game.printText(game.player.getChatbox(), game.player.getUsername() + " has received: " + Item.getItemById(drop).getItemName(), new Color(255, 0, 255));
+    							state.itemTiles[i][j].sort(null);
+    							state.npcTiles[i][j].remove(x);
+    							if (state.npcTiles[i][j].size() == 0) {
+    								state.npcTiles[i][j].add(null);
+    							}
+    							return;
+    						}
+    						if ((((Enemy) (state.npcTiles[i][j].get(x))).getInCombatWith() != null) && (tmpTime - ((Enemy) (state.npcTiles[i][j].get(x))).getAttackTime() > ((Enemy) (state.npcTiles[i][j].get(x))).getAttackSpeed()*100)) {
+    							((Enemy) (state.npcTiles[i][j].get(x))).attack(((Enemy) (state.npcTiles[i][j].get(x))).getInCombatWith());
+    							if (((Enemy) (state.npcTiles[i][j].get(x))).getInCombatWith().getCurrHealth() <= 0) {
+    								((Enemy) (state.npcTiles[i][j].get(x))).attack(null);
+    							}
+    						}
     					}
     				}
     			}

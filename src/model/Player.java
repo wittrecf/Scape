@@ -42,6 +42,9 @@ public class Player {
 	private int maxHealth = 100;
 	private int currHealth;
 	private int damage = 1;
+	private int attackSpeed = 5;
+	private Enemy inCombatWith = null;
+	private double attackTime = 0;
 	
 	private int[] statXP = new int[skillNum];
 	
@@ -228,7 +231,7 @@ public class Player {
 		for (int i = tmpX - len; i <= tmpX + len; i++) {
 			for (int j = tmpY - len; j <= tmpY + len; j++) {
 				if (!((i < 0) || (i >= state.mapColsNum) || (j < 0) || (j >= state.mapRowsNum))) {
-					if ((state.mapTiles[i][j] == 1) && (state.objTiles[i][j] == 0)) {
+					if ((state.mapTiles[i][j] == 1) && (state.objTiles[i][j] == 0) && ((this.inCombatWith == null) || ((this.inCombatWith != null) && !((this.inCombatWith.getXLoc() == i) && (this.inCombatWith.getYLoc() == j))))) {
 						n = new Node(i, j);
 						if ((i == tmpX) && (j == tmpY)) {
 							//System.out.println("zero node at " + i + ", " + j);
@@ -378,7 +381,7 @@ public class Player {
 		while (true) {
 			//System.out.println(n.getX() + ", " + n.getY());
 			//System.out.println("dist " + n.getDist());
-			if ((n != null) && ((path.size() == 0) || (checkAdjacency(true, new int[] {path.get(path.size() - 1).getX(), path.get(path.size() - 1).getY()}, new int[] {n.getX(), n.getY()})))) {
+			if ((n != null) && ((path.size() == 0) || (checkAdjacency(true, true, new int[] {path.get(path.size() - 1).getX(), path.get(path.size() - 1).getY()}, new int[] {n.getX(), n.getY()})))) {
 				state.mapTiles[n.getX()][n.getY()] = 3;
 				if (n.getPrev() != null) {
 					path.add(n);
@@ -396,7 +399,8 @@ public class Player {
 		}
 	}
 	
-	private void findDir() {Node n = path.get(path.size() - 1);
+	private void findDir() {
+		Node n = path.get(path.size() - 1);
 		int x = this.xLoc - n.getX();
 		int y = this.yLoc - n.getY();
 		if (x != 0) {
@@ -407,15 +411,16 @@ public class Player {
 		}
 	}
 	
-	private boolean checkAdjacency(boolean checkDiagonal, int[] t1, int[] t2) {
-		if ((t1[0] == t2[0]) && (t1[1] == t2[1])) {
-			return true;
-		} else {
-			if (checkDiagonal) {
-				return (Math.abs(t2[0] - t1[0]) <= 1) && (Math.abs(t2[1] - t1[1]) <= 1);
-			} else {
-				return ((Math.abs(Math.abs(t2[0] - t1[0]) + Math.abs(t2[1] - t1[1])) == 1));
+	private boolean checkAdjacency(boolean checkDiagonal, boolean checkUnder, int[] t1, int[] t2) {
+		if (checkUnder) {
+			if ((t1[0] == t2[0]) && (t1[1] == t2[1])) {
+				return true;
 			}
+		}
+		if (checkDiagonal) {
+			return (Math.abs(t2[0] - t1[0]) <= 1) && (Math.abs(t2[1] - t1[1]) <= 1);
+		} else {
+			return ((Math.abs(Math.abs(t2[0] - t1[0]) + Math.abs(t2[1] - t1[1])) == 1));
 		}
 		
 	}
@@ -431,7 +436,7 @@ public class Player {
 	}
 	
 	public void interact() {
-		if (checkAdjacency(false, new int[] {xLoc, yLoc}, target)) {
+		if (checkAdjacency(false, false, new int[] {xLoc, yLoc}, target)) {
 			System.out.println(target[0] + "-" + xLoc + "+" + 15);
 			System.out.println(target[1] + "-" + yLoc + "+" + 7);
 			System.out.println((target[0] - xLoc + 15) + ", " + (target[1] - yLoc + 7));
@@ -453,7 +458,6 @@ public class Player {
 					target = null;
 				}
 			} else {
-				System.out.println("Your inventory is full.");
 				Game.printText(chatbox, "Your inventory is full.\n", Color.GRAY);
 				path.clear();
 				target = null;
@@ -496,17 +500,17 @@ public class Player {
 				this.xDir = 0;
 				this.yDir = 0;
 				//System.out.println("d");
-				//System.out.println("moved to " + xLoc + ", " + yLoc);
+				System.out.println("moved to " + xLoc + ", " + yLoc);
 				updateState = -1;
 			}
 		} else if ((target != null) && doInteract) {// && (updateState == 1)) {
 			interact();
 			updateState = 0;
 		} else if ((pickItem > 0) && (target != null)) {
-			if (checkAdjacency(false, new int[] {xLoc, yLoc}, target)) {
-			inv.addItem(pickItem);
-    		state.itemTiles[target[0]][target[1]].remove(new Integer(pickItem));
-    		pickItem = 0;
+			if (checkAdjacency(false, true, new int[] {xLoc, yLoc}, target)) {
+				inv.addItem(pickItem);
+	    		state.itemTiles[target[0]][target[1]].remove(new Integer(pickItem));
+	    		pickItem = 0;
 			} else {
 				System.out.println("is " + xLoc + ", " + yLoc + " adjacent to " + target[0] + ", " + target[1]);
 			}
@@ -519,6 +523,52 @@ public class Player {
 			this.currHealth = 0;
 		}
 		Game.printText(chatbox, "Health is now: " + this.currHealth + "\n", Color.GRAY);
+	}
+	
+	public void attack(Enemy e) {
+		if (this.currHealth > 0) {
+			this.inCombatWith = e;
+			if ((e != null) && (checkAdjacency(false, false, new int[] {xLoc, yLoc}, new int[] {e.getXLoc(), e.getYLoc()}))) {
+				System.out.println("try to attack");
+				if ((e.getCurrHealth() > 0) && (System.currentTimeMillis() - this.getAttackTime() > this.getAttackSpeed()*100)) {
+					e.damage(this.damage);
+					if (e.getInCombatWith() == null) {
+						e.attack(this);
+					}
+					if (this.getInCombatWith().getCurrHealth() <= 0) {
+						this.inCombatWith = null;
+					}
+					this.attackTime = System.currentTimeMillis();
+				}
+			} else if ((e != null) && (path.size() == 0)) {
+				int tmpX;
+				int tmpY;
+				if ((xLoc == e.getXLoc()) && (yLoc == e.getYLoc())) {
+					if ((state.mapTiles[e.getXLoc() + 1][e.getYLoc()] == 1) && (state.objTiles[e.getXLoc() + 1][e.getYLoc()] == 0)) {
+						tmpX = e.getXLoc() + 1;
+						tmpY = e.getYLoc();
+					} else if ((state.mapTiles[e.getXLoc() - 1][e.getYLoc()] == 1) && (state.objTiles[e.getXLoc() - 1][e.getYLoc()] == 0)) {
+						tmpX = e.getXLoc() - 1;
+						tmpY = e.getYLoc();
+					} else if ((state.mapTiles[e.getXLoc()][e.getYLoc() + 1] == 1) && (state.objTiles[e.getXLoc()][e.getYLoc() + 1] == 0)) {
+						tmpX = e.getXLoc();
+						tmpY = e.getYLoc() + 1;
+					} else if ((state.mapTiles[e.getXLoc()][e.getYLoc() - 1] == 1) && (state.objTiles[e.getXLoc()][e.getYLoc() - 1] == 0)) {
+						tmpX = e.getXLoc();
+						tmpY = e.getYLoc() - 1;
+					} else {
+						tmpX = e.getXLoc() + 1;
+						tmpY = e.getYLoc();
+					}
+				} else {
+					System.out.println("elseded");
+					tmpX = e.getXLoc();
+					tmpY = e.getYLoc();
+				}
+				System.out.println("GOTO: " + tmpX + ", " + tmpY + " from " + xLoc + ", " + yLoc);
+				moveTo(tmpX, tmpY, false, tmpX - this.getXLoc() + ((state.boardColsNum - 3) / 2), tmpY - this.getYLoc() + ((state.boardRowsNum - 3) / 2), false);
+			}
+		}
 	}
 	
 	public void pickUp(int item, int[] tmp) {
@@ -620,5 +670,25 @@ public class Player {
 	
 	public int getDamage() {
 		return this.damage;
+	}
+	
+	public int getAttackSpeed() {
+		return this.attackSpeed;
+	}
+	
+	public Enemy getInCombatWith() {
+		return this.inCombatWith;
+	}
+	
+	public void setInCombatWith(Enemy e) {
+		this.inCombatWith = e;
+	}
+	
+	public double getAttackTime() {
+		return this.attackTime;
+	}
+	
+	public void setAttackTime(double t) {
+		this.attackTime = t;
 	}
 }
