@@ -71,7 +71,7 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 	private boolean gameOver;
 	private Board board;
 	private Timer timer;
-	private BoardState state;
+	public static BoardState state;
 	public Player player;
 	private MainController mainController;
 	
@@ -116,9 +116,9 @@ public class Game extends JPanel implements ActionListener, KeyListener {
     	state.npcTiles[35][52] = new ArrayList<NPC>();
     	state.npcTiles[35][52].add(new Enemy("Goblin General", ImageEnum.PLAYER.getImg(), 35, 52, 10, 1));
     	state.npcTiles[35][52].get(0).setTalkable(false);
-    	((Enemy) state.npcTiles[35][52].get(0)).addDrop(10);
-    	((Enemy) state.npcTiles[35][52].get(0)).addDrop(50);
-    	((Enemy) state.npcTiles[35][52].get(0)).addDrop(90);
+    	((Enemy) state.npcTiles[35][52].get(0)).addDrop(10, 3);
+    	((Enemy) state.npcTiles[35][52].get(0)).addDrop(50, 2);
+    	((Enemy) state.npcTiles[35][52].get(0)).addDrop(90, 1);
     	
     	scaleScreenItems();
     	
@@ -286,7 +286,7 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 		    		if (state.npcTiles[x][y] != null) {
 		    			for (int i = 0; i < state.npcTiles[x][y].size(); i++) {
 		    				if (state.npcTiles[x][y].get(i) != null) {
-			    				g2.drawImage(ImageEnum.scaleToDimensions(state.npcTiles[x][y].get(i).getImg(), ImageEnum.TILEGRASS.getWidth(), ImageEnum.TILEGRASS.getHeight()), block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), null);
+			    				g2.drawImage(ImageEnum.scaleToDimensions(state.npcTiles[x][y].get(i).getImg(), ImageEnum.TILEGRASS.getWidth(), ImageEnum.TILEGRASS.getHeight()), block.getXLoc() + player.getXOff() + state.npcTiles[x][y].get(i).getXOff(), block.getYLoc() + player.getYOff() + state.npcTiles[x][y].get(i).getYOff(), null);
 			    				if ((state.npcTiles[x][y].get(i) instanceof Enemy) && ((Enemy) (state.npcTiles[x][y].get(i))).getInCombatWith() != null) {
 			    					g2.setColor(Color.RED);
 			    					g2.fillRect(block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), BoardTile.getWidth(), 10);

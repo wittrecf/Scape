@@ -45,6 +45,7 @@ public class Player {
 	private int attackSpeed = 5;
 	private Enemy inCombatWith = null;
 	private double attackTime = 0;
+	private boolean autoRetaliate = false;
 	
 	private int[] statXP = new int[skillNum];
 	
@@ -219,8 +220,9 @@ public class Player {
 		}
 	}
 	
-	private ArrayList<Node> createNodeMap(int len) {
+	private ArrayList<Node> createNodeMap(int len, int xPass, int yPass) {
 		//System.out.println("L is " + len);
+		//System.out.println("xPass: " + xPass + ", yPass: " + yPass + ". Current loc is: " + xLoc + ", " + yLoc);
 		Node[][] arr = new Node[(int) (2*len + 1)][(int) (2*len + 1)];
 		ArrayList<Node> list = new ArrayList<Node>();
 		Node n;
@@ -231,8 +233,9 @@ public class Player {
 		for (int i = tmpX - len; i <= tmpX + len; i++) {
 			for (int j = tmpY - len; j <= tmpY + len; j++) {
 				if (!((i < 0) || (i >= state.mapColsNum) || (j < 0) || (j >= state.mapRowsNum))) {
-					if ((state.mapTiles[i][j] == 1) && (state.objTiles[i][j] == 0) && ((this.inCombatWith == null) || ((this.inCombatWith != null) && !((this.inCombatWith.getXLoc() == i) && (this.inCombatWith.getYLoc() == j))))) {
+					if ((state.mapTiles[i][j] == 1) && (state.objTiles[i][j] == 0) && ((this.inCombatWith == null) || ((this.inCombatWith != null) && !((this.inCombatWith.getXLoc() == i) && (this.inCombatWith.getYLoc() == j) && (xPass == this.inCombatWith.getXLoc()) && (yPass == this.inCombatWith.getYLoc()))))) {
 						n = new Node(i, j);
+						//System.out.println("made a new node at " + i + ", " + j);
 						if ((i == tmpX) && (j == tmpY)) {
 							//System.out.println("zero node at " + i + ", " + j);
 							//System.out.println("xDir: " + xDir + ", yDir: " + yDir);
@@ -295,7 +298,7 @@ public class Player {
 		//System.out.println("chunk 1 done");
 		//System.out.println("finding path to " + x + ", " + y);
 		
-		ArrayList<Node> list = createNodeMap(length);
+		ArrayList<Node> list = createNodeMap(length, x, y);
 		Node min;
 		Node close = null;
 		int prox = 999;
@@ -357,6 +360,7 @@ public class Player {
 	}
 	
 	public void moveTo(int x, int y, boolean isTarget, int xSet, int ySet, boolean interact) {
+		System.out.println("Go to " + x + ", " + y + ". " + isTarget + ". " + xSet + ", " + ySet + ". " + interact);
 		Node tmp = null;
 		this.doInteract = interact;
 		pickItem = 0;
@@ -411,7 +415,7 @@ public class Player {
 		}
 	}
 	
-	private boolean checkAdjacency(boolean checkDiagonal, boolean checkUnder, int[] t1, int[] t2) {
+	public static boolean checkAdjacency(boolean checkDiagonal, boolean checkUnder, int[] t1, int[] t2) {
 		if (checkUnder) {
 			if ((t1[0] == t2[0]) && (t1[1] == t2[1])) {
 				return true;
@@ -500,20 +504,14 @@ public class Player {
 				this.xDir = 0;
 				this.yDir = 0;
 				//System.out.println("d");
-				System.out.println("moved to " + xLoc + ", " + yLoc);
+				//System.out.println("moved to " + xLoc + ", " + yLoc);
 				updateState = -1;
 			}
 		} else if ((target != null) && doInteract) {// && (updateState == 1)) {
 			interact();
 			updateState = 0;
 		} else if ((pickItem > 0) && (target != null)) {
-			if (checkAdjacency(false, true, new int[] {xLoc, yLoc}, target)) {
-				inv.addItem(pickItem);
-	    		state.itemTiles[target[0]][target[1]].remove(new Integer(pickItem));
-	    		pickItem = 0;
-			} else {
-				System.out.println("is " + xLoc + ", " + yLoc + " adjacent to " + target[0] + ", " + target[1]);
-			}
+			pickUp(pickItem, target);
 		}
 	}
 	
@@ -529,7 +527,7 @@ public class Player {
 		if (this.currHealth > 0) {
 			this.inCombatWith = e;
 			if ((e != null) && (checkAdjacency(false, false, new int[] {xLoc, yLoc}, new int[] {e.getXLoc(), e.getYLoc()}))) {
-				System.out.println("try to attack");
+				//System.out.println("try to attack");
 				if ((e.getCurrHealth() > 0) && (System.currentTimeMillis() - this.getAttackTime() > this.getAttackSpeed()*100)) {
 					e.damage(this.damage);
 					if (e.getInCombatWith() == null) {
@@ -543,7 +541,7 @@ public class Player {
 			} else if ((e != null) && (path.size() == 0)) {
 				int tmpX;
 				int tmpY;
-				if ((xLoc == e.getXLoc()) && (yLoc == e.getYLoc())) {
+				if ((xLoc == e.getXLoc()) && (yLoc == e.getYLoc()) && (System.currentTimeMillis() - this.getAttackTime() > this.getAttackSpeed()*100)) {
 					if ((state.mapTiles[e.getXLoc() + 1][e.getYLoc()] == 1) && (state.objTiles[e.getXLoc() + 1][e.getYLoc()] == 0)) {
 						tmpX = e.getXLoc() + 1;
 						tmpY = e.getYLoc();
@@ -565,16 +563,21 @@ public class Player {
 					tmpX = e.getXLoc();
 					tmpY = e.getYLoc();
 				}
-				System.out.println("GOTO: " + tmpX + ", " + tmpY + " from " + xLoc + ", " + yLoc);
-				moveTo(tmpX, tmpY, false, tmpX - this.getXLoc() + ((state.boardColsNum - 3) / 2), tmpY - this.getYLoc() + ((state.boardRowsNum - 3) / 2), false);
+				//System.out.println("GOTO: " + tmpX + ", " + tmpY + " from " + xLoc + ", " + yLoc);
+				this.attackTime = System.currentTimeMillis();
+				moveTo(tmpX, tmpY, false, (tmpX - this.getXLoc() + ((state.boardColsNum - 3) / 2)) * ImageEnum.TILEGRASS.getWidth(), (tmpY - this.getYLoc() + ((state.boardRowsNum - 3) / 2)) * ImageEnum.TILEGRASS.getHeight(), false);
 			}
 		}
 	}
 	
 	public void pickUp(int item, int[] tmp) {
 		if ((xLoc == tmp[0]) && (yLoc == tmp[1])) {
-			inv.addItem(item);
-    		state.itemTiles[tmp[0]][tmp[1]].remove(new Integer(item));
+			if (inv.addItem(item)) {
+				state.itemTiles[tmp[0]][tmp[1]].remove(new Integer(item));
+			} else {
+				Game.printText(chatbox, "Your inventory is full.\n", Color.GRAY);
+			}
+			pickItem = 0;
 		} else {
 			moveTo(tmp[0], tmp[1], tmp[2] == 1, tmp[3], tmp[4], false);
 			pickItem = item;
@@ -690,5 +693,13 @@ public class Player {
 	
 	public void setAttackTime(double t) {
 		this.attackTime = t;
+	}
+	
+	public boolean getAutoRetaliate() {
+		return this.autoRetaliate;
+	}
+	
+	public void setAutoRetaliate(boolean b) {
+		this.autoRetaliate = b;
 	}
 }

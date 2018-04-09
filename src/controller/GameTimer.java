@@ -63,16 +63,23 @@ public class GameTimer extends TimerTask {
     							if (state.itemTiles[i][j] == null) {
     								state.itemTiles[i][j] = new ArrayList<Integer>();
     							}
-    							int drop = ((Enemy) (state.npcTiles[i][j].get(x))).die();
-    							state.itemTiles[i][j].add(drop);
-    							Game.printText(game.player.getChatbox(), game.player.getUsername() + " has received: " + Item.getItemById(drop).getItemName(), new Color(255, 0, 255));
+    							int[] drop = ((Enemy) (state.npcTiles[i][j].get(x))).die();
+    							for (int q = 0; q < drop[1]; q++) {
+    								state.itemTiles[i][j].add(drop[0]);
+    							}
+    							Game.printText(game.player.getChatbox(), game.player.getUsername() + " has received: " + drop[1] + "x " + Item.getItemById(drop[0]).getItemName() + "\n", new Color(255, 0, 255));
     							state.itemTiles[i][j].sort(null);
     							state.npcTiles[i][j].remove(x);
     							if (state.npcTiles[i][j].size() == 0) {
-    								state.npcTiles[i][j].add(null);
+    								state.npcTiles[i][j] = null;
     							}
     							return;
     						}
+    						if ((tmpTime - startTime) % 1 == 0) {
+								if (((Enemy) (state.npcTiles[i][j].get(x))).move()) {
+									return;
+								}
+							}
     						if ((((Enemy) (state.npcTiles[i][j].get(x))).getInCombatWith() != null) && (tmpTime - ((Enemy) (state.npcTiles[i][j].get(x))).getAttackTime() > ((Enemy) (state.npcTiles[i][j].get(x))).getAttackSpeed()*100)) {
     							((Enemy) (state.npcTiles[i][j].get(x))).attack(((Enemy) (state.npcTiles[i][j].get(x))).getInCombatWith());
     							if (((Enemy) (state.npcTiles[i][j].get(x))).getInCombatWith().getCurrHealth() <= 0) {

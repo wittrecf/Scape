@@ -2,6 +2,8 @@ package model;
 
 import java.util.ArrayList;
 
+import view.Game;
+
 public class Inventory {
 	
 	private int inventoryWidth;
@@ -36,12 +38,14 @@ public class Inventory {
     	return -1;
     }
     
-    public void addItem(int itemID) {
+    public boolean addItem(int itemID) {
     	int x = findFirstSlot();
     	System.out.println("adding..");
     	if (x != -1) {
     		inventorySlots.get(x).setItem(itemID);
-    		System.out.println("item added");
+    		return true;
+    	} else {
+    		return false;
     	}
     }
     
