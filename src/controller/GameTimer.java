@@ -58,6 +58,12 @@ public class GameTimer extends TimerTask {
     			}
     			if (state.npcTiles[i][j] != null) {
     				for (int x = 0; x < state.npcTiles[i][j].size(); x++) {
+    					if ((tmpTime - startTime) % 1 == 0) {
+							if ((state.npcTiles[i][j].get(x)).move()) {
+								return;
+							}
+							System.out.println("movement");
+						}
     					if (state.npcTiles[i][j].get(x) instanceof Enemy) {
     						if (((Enemy) (state.npcTiles[i][j].get(x))).getCurrHealth() <= 0) {
     							if (state.itemTiles[i][j] == null) {
@@ -75,17 +81,23 @@ public class GameTimer extends TimerTask {
     							}
     							return;
     						}
-    						if ((tmpTime - startTime) % 1 == 0) {
-								if (((Enemy) (state.npcTiles[i][j].get(x))).move()) {
-									return;
-								}
-							}
     						if ((((Enemy) (state.npcTiles[i][j].get(x))).getInCombatWith() != null) && (tmpTime - ((Enemy) (state.npcTiles[i][j].get(x))).getAttackTime() > ((Enemy) (state.npcTiles[i][j].get(x))).getAttackSpeed()*100)) {
     							((Enemy) (state.npcTiles[i][j].get(x))).attack(((Enemy) (state.npcTiles[i][j].get(x))).getInCombatWith());
     							if (((Enemy) (state.npcTiles[i][j].get(x))).getInCombatWith().getCurrHealth() <= 0) {
+    								System.out.println("ded");
     								((Enemy) (state.npcTiles[i][j].get(x))).attack(null);
     							}
+    						} else if ((state.npcTiles[i][j].get(x).getTarget() == null) && (((Enemy) (state.npcTiles[i][j].get(x))).getInCombatWith() == null)) {
+    							System.out.println("wanderin");
+    							//((Enemy) (state.npcTiles[i][j].get(x))).wander(10);
+    						} else {
+    							System.out.println("no mans land");
+    							System.out.println(state.npcTiles[i][j].get(x).getTarget());
+    							System.out.println(((Enemy) (state.npcTiles[i][j].get(x))).getInCombatWith());
+    							System.out.println("wrap no mans");
     						}
+    					} else if (state.npcTiles[i][j].get(x).getTarget() == null){
+    						//state.npcTiles[i][j].get(x).wander(100);
     					}
     				}
     			}

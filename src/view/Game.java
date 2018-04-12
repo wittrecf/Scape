@@ -109,9 +109,9 @@ public class Game extends JPanel implements ActionListener, KeyListener {
     	state = new BoardState();
     	state.board = board;
     	
-    	state.npcTiles[35][51] = new ArrayList<NPC>();
-    	state.npcTiles[35][51].add(new NPC("Dave", ImageEnum.PLAYER.getImg(), 35, 51));
-    	state.npcTiles[35][51].get(0).setTalkable(true);
+    	//state.npcTiles[35][51] = new ArrayList<NPC>();
+    	//state.npcTiles[35][51].add(new NPC("Dave", ImageEnum.PLAYER.getImg(), 35, 51));
+    	//state.npcTiles[35][51].get(0).setTalkable(true);
     	
     	state.npcTiles[35][52] = new ArrayList<NPC>();
     	state.npcTiles[35][52].add(new Enemy("Goblin General", ImageEnum.PLAYER.getImg(), 35, 52, 10, 1));
@@ -313,6 +313,9 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 			}
 			
 			g2.drawImage(ImageEnum.PLAYER.getImg(), ((state.boardColsNum - 3) / 2) * ImageEnum.TILEGRASS.getWidth() + (int) (.05 * ImageEnum.TILEGRASS.getWidth()), ((state.boardRowsNum - 3) / 2) * ImageEnum.TILEGRASS.getHeight() + (int) (.05 * ImageEnum.TILEGRASS.getHeight()), null);
+			g2.setColor(Color.WHITE);
+    		g2.setFont(new Font("TimesRoman", Font.PLAIN, (int)(0.5*fontSize)));
+    		g2.drawString(player.getXLoc() + ":" + player.getYLoc(), player.getXLoc() + 15 + player.getXOff(), player.getYLoc() + 15 + player.getYOff());
 			g2.drawImage(ImageEnum.INVENTORY.getImg(), board.getWidth() - ImageEnum.INVENTORY.getWidth(), board.getHeight() - ImageEnum.INVENTORY.getHeight(), null);
 			
 			for (InventoryTile i : player.getInv().getInventory()) {

@@ -503,6 +503,7 @@ public class Player {
 				}
 				this.xDir = 0;
 				this.yDir = 0;
+				System.out.println("I moved to " + this.xLoc + ", " + this.yLoc);
 				//System.out.println("d");
 				//System.out.println("moved to " + xLoc + ", " + yLoc);
 				updateState = -1;
