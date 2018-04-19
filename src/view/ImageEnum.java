@@ -22,6 +22,7 @@ public enum ImageEnum {
 	FISHINGSPOTSHRIMP("FishingSpotShrimp.png"),
 	EXIT_DEFAULT("btn_default.png"),
 	INVENTORY("Inventory.png"),
+	BANK("Bank.png"),
 	ICONBLANK("IconBlank.png"),
 	ICONCLAYORE("IconClayOre.png"),
 	ICONCLAYOREHIGHLIGHT("IconClayOreHighlight.png"),

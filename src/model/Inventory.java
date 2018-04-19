@@ -38,14 +38,29 @@ public class Inventory {
     	return -1;
     }
     
-    public boolean addItem(int itemID) {
-    	int x = findFirstSlot();
+    public int findExistingStack(int item) {
+    	for (int i = 0; i < INVENTORY_SIZE; i++) {
+    		if ((inventorySlots.get(i).getItem() == item) && (inventorySlots.get(i).getIsNoted())) {
+    			return i;
+    		}
+    	}
+    	return -1;
+    }
+    
+    public boolean addItem(int itemID, boolean noted, int amount) {
+    	int x = findExistingStack(itemID);
     	System.out.println("adding..");
-    	if (x != -1) {
-    		inventorySlots.get(x).setItem(itemID);
+    	if (noted && (x != -1)) {
+    		inventorySlots.get(x).setCount(inventorySlots.get(x).getCount() + amount);
     		return true;
     	} else {
-    		return false;
+    		x = findFirstSlot();
+    		if (x != -1) {
+    			inventorySlots.get(x).setItem(itemID, noted, amount);
+    			return true;
+    		} else {
+    			return false;
+    		}
     	}
     }
     
@@ -83,21 +98,30 @@ public class Inventory {
     	}
     }
     
-    public boolean dropSlot(int slotNum) {
+    public boolean decreaseSlot(int slotNum) {
     	if (inventorySlots.get(slotNum).getItem() != 0) {
-    		if (highlightedSlot != -1) {
-    			inventorySlots.get(highlightedSlot).highlightTile();
-    			highlightedSlot = -1;
-    		}
-    		inventorySlots.get(slotNum).setItem(0);
+    		inventorySlots.get(slotNum).setCount(inventorySlots.get(slotNum).getCount() - 1);
     		return true;
     	} else {
     		return false;
     	}
     }
     
-    public void setSlot(int slotNum, int item) {
-    	inventorySlots.get(slotNum).setItem(item);
+    public boolean dropSlot(int slotNum) {
+    	if (inventorySlots.get(slotNum).getItem() != 0) {
+    		if (highlightedSlot != -1) {
+    			inventorySlots.get(highlightedSlot).highlightTile();
+    			highlightedSlot = -1;
+    		}
+    		inventorySlots.get(slotNum).setItem(0, false, 0);
+    		return true;
+    	} else {
+    		return false;
+    	}
+    }
+    
+    public void setSlot(int slotNum, int item, boolean noted, int amount) {
+    	inventorySlots.get(slotNum).setItem(item, noted, amount);
     }
     
     public int getSlot(int slotNum) {
@@ -115,7 +139,7 @@ public class Inventory {
 	public void setDefaultInventory() {
 		for (int j = 0; j < 7; j++) {
 			for (int i = 0; i < 4; i++) {
-				inventorySlots.add(new InventoryTile(i, j, 0));
+				inventorySlots.add(new InventoryTile(i, j));
 			}
 		}
 	}

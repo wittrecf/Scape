@@ -53,10 +53,12 @@ import javax.swing.text.StyleContext;
 import controller.CollisionDetection;
 import controller.GameTimer;
 import controller.MainController;
+import model.BankTile;
 import model.Board;
 import model.BoardState;
 import model.BoardTile;
 import model.Enemy;
+import model.Inventory;
 import model.InventoryTile;
 import model.Item;
 import model.KeyType;
@@ -73,7 +75,7 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 	private Timer timer;
 	public static BoardState state;
 	public Player player;
-	private MainController mainController;
+	public static MainController mainController;
 	
 	private int fontSize;
 	private int centerX;
@@ -88,9 +90,12 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 	public String spokenText = "";
 	public double spokenTime = 0;
 	
+	public static boolean bankOpen = false;
+	
 	public JLabel label;
 	
 	private JButton btnExit = new JButton();
+	private JButton btnNote = new JButton();
 	
 	private String mapArrayFile = "resources/mapArray.txt";
 	private String objArrayFile = "resources/objArray.txt";
@@ -116,9 +121,9 @@ public class Game extends JPanel implements ActionListener, KeyListener {
     	state.npcTiles[35][52] = new ArrayList<NPC>();
     	state.npcTiles[35][52].add(new Enemy("Goblin General", ImageEnum.PLAYER.getImg(), 35, 52, 10, 1));
     	state.npcTiles[35][52].get(0).setTalkable(false);
-    	((Enemy) state.npcTiles[35][52].get(0)).addDrop(10, 3);
-    	((Enemy) state.npcTiles[35][52].get(0)).addDrop(50, 2);
-    	((Enemy) state.npcTiles[35][52].get(0)).addDrop(90, 1);
+    	((Enemy) state.npcTiles[35][52].get(0)).addDrop(new int[] {10, 10}, new int[] {1, 0}, new int[] {3, 2});
+    	((Enemy) state.npcTiles[35][52].get(0)).addDrop(new int[] {50}, new int[] {0}, new int[] {2});
+    	((Enemy) state.npcTiles[35][52].get(0)).addDrop(new int[] {90}, new int[] {1}, new int[] {1});
     	
     	scaleScreenItems();
     	
@@ -161,6 +166,15 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 		btnExit.setBounds(mainController.getWidth() - btnExit.getPreferredSize().width, 0, btnExit.getPreferredSize().width, btnExit.getPreferredSize().height);
 		btnExit.addActionListener(this);
 		
+		btnNote.setBackground(Color.WHITE);
+		btnNote.setForeground(Color.BLACK);
+		btnNote.setFont(new Font("TimesRoman", Font.BOLD, 20));
+		btnNote.setHorizontalTextPosition(JButton.CENTER);
+		btnNote.setVerticalTextPosition(JButton.CENTER);
+		btnNote.setText("Note");
+		btnNote.setBounds((int) ((mainController.getWidth() / 2) - (btnNote.getPreferredSize().getWidth() / 2)), 50 + ImageEnum.BANK.getHeight(), btnNote.getPreferredSize().width, btnNote.getPreferredSize().height);
+		btnNote.addActionListener(this);
+		
 		textField = new JTextField(50);
 		textField.setBounds(0, mainController.getHeight() - textField.getPreferredSize().height, textField.getPreferredSize().width, textField.getPreferredSize().height);
         textField.setBackground(Color.LIGHT_GRAY);
@@ -185,6 +199,7 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 		this.setLayout(null);
 		
     	add(btnExit);
+    	add(btnNote);
     	add(textField);
     	add(scrollPane);
     	add(label);
@@ -280,7 +295,7 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 		    		}
 		    		if (state.itemTiles[x][y] != null) {
 		    			for (int i = 0; i < state.itemTiles[x][y].size(); i++) {
-		    				g2.drawImage(ImageEnum.scaleToDimensions(ImageEnum.getIcons()[state.itemTiles[x][y].get(i)][0], ImageEnum.TILEGRASS.getWidth(), ImageEnum.TILEGRASS.getHeight()), block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), null);
+		    				g2.drawImage(ImageEnum.scaleToDimensions(ImageEnum.getIcons()[state.itemTiles[x][y].get(i)[0]][0], ImageEnum.TILEGRASS.getWidth(), ImageEnum.TILEGRASS.getHeight()), block.getXLoc() + player.getXOff(), block.getYLoc() + player.getYOff(), null);
 		    			}
 		    		}
 		    		if (state.npcTiles[x][y] != null) {
@@ -328,6 +343,11 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 							(int) (board.getWidth() - ImageEnum.INVENTORY.getWidth() + (.06 * ImageEnum.INVENTORY.getWidth()) + (i.getXLoc() * (ImageEnum.ICONBLANK.getWidth() + .04 * ImageEnum.INVENTORY.getWidth()))),
 							(int) (board.getHeight() - ImageEnum.INVENTORY.getHeight() + (.04 * ImageEnum.INVENTORY.getHeight()) + (i.getYLoc() * (ImageEnum.ICONBLANK.getHeight() + .04 * ImageEnum.INVENTORY.getWidth()))),
 							null);
+					if (i.getIsNoted()) {
+						g2.drawString(Integer.toString(i.getCount()),
+								(int) (board.getWidth() - ImageEnum.INVENTORY.getWidth() + (.06 * ImageEnum.INVENTORY.getWidth()) + (i.getXLoc() * (ImageEnum.ICONBLANK.getWidth() + .04 * ImageEnum.INVENTORY.getWidth()))),
+								10 + (int) (board.getHeight() - ImageEnum.INVENTORY.getHeight() + (.04 * ImageEnum.INVENTORY.getHeight()) + (i.getYLoc() * (ImageEnum.ICONBLANK.getHeight() + .04 * ImageEnum.INVENTORY.getWidth()))));
+					}
 				}
 			}
 			
@@ -373,6 +393,28 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 			g2.setColor(Color.WHITE);
 			
 			g2.drawString(spokenText,((state.boardColsNum - 3) / 2) * ImageEnum.TILEGRASS.getWidth() + (int) (.5 * ImageEnum.TILEGRASS.getWidth()) - fm.stringWidth(spokenText)/2, ((state.boardRowsNum - 3) / 2) * ImageEnum.TILEGRASS.getHeight() + (int) (.05 * ImageEnum.TILEGRASS.getHeight()));
+			
+			if (bankOpen) {
+				g2.drawImage(ImageEnum.BANK.getImg(), (mainController.getWidth() / 2) - (ImageEnum.BANK.getImg().getWidth() / 2), 50, null);
+				for (BankTile b : player.getBank().getBank()) {
+					g2.drawImage(ImageEnum.ICONBLANK.getImg(),
+							(int) ((mainController.getWidth() / 2) - (ImageEnum.BANK.getImg().getWidth() / 2) + (.03 * ImageEnum.BANK.getWidth()) + (b.getXLoc() * (ImageEnum.ICONBLANK.getWidth() + .02 * ImageEnum.BANK.getWidth()))),
+							(int) (50 + (.02 * ImageEnum.BANK.getHeight()) + (b.getYLoc() * (ImageEnum.ICONBLANK.getHeight() + .02 * ImageEnum.BANK.getWidth()))),
+							null);
+					btnNote.setVisible(true);
+					if (b.getItem() > 0) {
+						g2.drawImage(b.getItemImg(),
+								(int) ((mainController.getWidth() / 2) - (ImageEnum.BANK.getImg().getWidth() / 2) + (.03 * ImageEnum.BANK.getWidth()) + (b.getXLoc() * (ImageEnum.ICONBLANK.getWidth() + .02 * ImageEnum.BANK.getWidth()))),
+								(int) (50 + (.02 * ImageEnum.BANK.getHeight()) + (b.getYLoc() * (ImageEnum.ICONBLANK.getHeight() + .02 * ImageEnum.BANK.getWidth()))),
+								null);
+						g2.drawString(Integer.toString(b.getCount()),
+								(int) ((mainController.getWidth() / 2) - (ImageEnum.BANK.getImg().getWidth() / 2) + (.03 * ImageEnum.BANK.getWidth()) + (b.getXLoc() * (ImageEnum.ICONBLANK.getWidth() + .02 * ImageEnum.BANK.getWidth()))),
+								(int) (60 + (.02 * ImageEnum.BANK.getHeight()) + (b.getYLoc() * (ImageEnum.ICONBLANK.getHeight() + .02 * ImageEnum.BANK.getWidth()))));
+					}
+				}
+			} else {
+				btnNote.setVisible(false);
+			}
 			
 			if (player.getUpdateState() == -1) {
 				player.setUpdateState(1);
@@ -488,6 +530,7 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 		ImageEnum.PLAYER.scaleByFactor(scaleFactor);
 		
 		ImageEnum.INVENTORY.scaleByFactor(scaleFactor);
+		ImageEnum.BANK.scaleByFactor(scaleFactor);
 		
 		ImageEnum.ICONBLANK.scaleByFactor(scaleFactor);
 		ImageEnum.ICONCLAYORE.scaleByFactor(scaleFactor);
@@ -509,7 +552,7 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 			}
 			if (state.itemTiles[click[0]][click[1]] != null) {
 				for (int i = state.itemTiles[click[0]][click[1]].size() - 1; i >= 0; i--) {
-					s.add("<html>Take <font color=\"#f8d56b\"> " + Item.getItemById(state.itemTiles[click[0]][click[1]].get(i)).getItemName() + " </font></html>");
+					s.add("<html>Take <font color=\"#f8d56b\"> " + Item.getItemById(state.itemTiles[click[0]][click[1]].get(i)[0]).getItemName() + " </font></html>");
 				}
 			}
 			if (state.npcTiles[click[0]][click[1]] != null) {
@@ -525,11 +568,26 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 			s.add("Walk here");
 		} else if (click[5] == 1) {
 			if ((click[0] >= 0) && (player.getInv().getSlot(click[0]) != 0)) {
-				s.add("<html>Use <font color=\"#f8d56b\"> " + InventoryTile.pickItem(player.getInv().getSlot(click[0])).getItemName() + " </font></html>");
-				s.add("<html>Drop <font color=\"#f8d56b\"> " + InventoryTile.pickItem(player.getInv().getSlot(click[0])).getItemName() + " </font></html>");
+				if (this.bankOpen) {
+					s.add("<html>Deposit <font color=\"#f8d56b\"> " + InventoryTile.pickItem(player.getInv().getSlot(click[0])).getItemName() + " </font></html>");
+					s.add("<html>Deposit 5 <font color=\"#f8d56b\"> " + InventoryTile.pickItem(player.getInv().getSlot(click[0])).getItemName() + " </font></html>");
+					s.add("<html>Deposit 10 <font color=\"#f8d56b\"> " + InventoryTile.pickItem(player.getInv().getSlot(click[0])).getItemName() + " </font></html>");
+					s.add("<html>Deposit 100 <font color=\"#f8d56b\"> " + InventoryTile.pickItem(player.getInv().getSlot(click[0])).getItemName() + " </font></html>");
+					s.add("<html>Deposit all <font color=\"#f8d56b\"> " + InventoryTile.pickItem(player.getInv().getSlot(click[0])).getItemName() + " </font></html>");
+				} else {
+					s.add("<html>Use <font color=\"#f8d56b\"> " + InventoryTile.pickItem(player.getInv().getSlot(click[0])).getItemName() + " </font></html>");
+					s.add("<html>Drop <font color=\"#f8d56b\"> " + InventoryTile.pickItem(player.getInv().getSlot(click[0])).getItemName() + " </font></html>");
+				}
+			}
+		} else if (click[5] == 2) {
+			if ((click[0] >= 0) && (player.getBank().getSlot(click[0]) != 0)) {
+				s.add("<html>Withdraw <font color=\"#f8d56b\"> " + InventoryTile.pickItem(player.getBank().getSlot(click[0])).getItemName() + " </font></html>");
+				s.add("<html>Withdraw 5 <font color=\"#f8d56b\"> " + InventoryTile.pickItem(player.getBank().getSlot(click[0])).getItemName() + " </font></html>");
+				s.add("<html>Withdraw 10 <font color=\"#f8d56b\"> " + InventoryTile.pickItem(player.getBank().getSlot(click[0])).getItemName() + " </font></html>");
+				s.add("<html>Withdraw 100 <font color=\"#f8d56b\"> " + InventoryTile.pickItem(player.getBank().getSlot(click[0])).getItemName() + " </font></html>");
+				s.add("<html>Withdraw all <font color=\"#f8d56b\"> " + InventoryTile.pickItem(player.getBank().getSlot(click[0])).getItemName() + " </font></html>");
 			}
 		}
-		
 		s.add("Cancel");
 		return s;
 	}
@@ -559,6 +617,14 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 	public void actionPerformed(ActionEvent event) {
 		if(event.getSource() == btnExit) {
 			this.shutdown();
+		} else if (event.getSource() == btnNote) {
+			if (btnNote.getBackground().equals(Color.WHITE)) {
+				btnNote.setBackground(Color.LIGHT_GRAY);
+			} else {
+				btnNote.setBackground(Color.WHITE);
+			}
+			player.getBank().setWithdrawNotes(!player.getBank().getWithdrawNotes());
+			this.requestFocusInWindow();
 		}
 		
 		String text = textField.getText();
@@ -608,9 +674,17 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 			System.out.println("enter");
 			textField.requestFocusInWindow();
 		} else if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
-			shutdown();
+			if (Game.bankOpen) {
+				Game.bankOpen = false;
+			} else {
+				shutdown();
+			}
 		} else if (e.getKeyCode() == KeyEvent.VK_5) {
 			player.damage(10);
+		} else if (e.getKeyCode() == KeyEvent.VK_B) {
+			if (!Game.bankOpen) {
+				Game.bankOpen = true;
+			}
 		}
 	}
 
@@ -670,6 +744,61 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 					player.getInv().highlightSlot(click[0]);
 				} else if (str[0].equals("<html>Drop")) {
 					player.dropSlot(click[0]);
+				} else if (str[0].equals("<html>Deposit")) {
+    				int amt = 1;
+					if (str[1].equals("5") || str[1].equals("10") || str[1].equals("100")) {
+						amt = Integer.parseInt(str[1]);
+					} else if (str[1].equals("all")) {
+						if (player.getInv().getInventory().get(click[0]).getIsNoted()) {
+							amt = player.getInv().getInventory().get(click[0]).getCount();
+						} else {
+							amt = Inventory.getInventorySize();
+						}
+					}
+					int itemNum = player.getInv().getInventory().get(click[0]).getItem();
+					if (player.getInv().getInventory().get(click[0]).getIsNoted()) {
+						if (player.getBank().addItem(itemNum, amt)) {
+							player.getInv().getInventory().get(click[0]).setCount(player.getInv().getInventory().get(click[0]).getCount() - amt);
+						}
+					} else {
+						int curr = 0;
+						for (int b = 0; b < Inventory.getInventorySize(); b++) {
+	    					if ((player.getInv().getSlot(b) == itemNum) && !player.getInv().getInventory().get(b).getIsNoted()) {
+	    						if (player.getBank().addItem(itemNum, 1)) {
+	    							player.getInv().decreaseSlot(b);
+	    							curr++;
+	    							if (curr >= amt) {
+	    								break;
+	    							}
+	    						}
+	    					}
+	    				}
+					}
+    			} else if (str[0].equals("<html>Withdraw")) {
+    				int amt = 1;
+					if (str[1].equals("5") || str[1].equals("10") || str[1].equals("100")) {
+						amt = Integer.parseInt(str[1]);
+						if (amt > player.getBank().getBank().get(click[0]).getCount()) {
+							amt = player.getBank().getBank().get(click[0]).getCount();
+						}
+					} else if (str[1].equals("all")) {
+						amt = player.getBank().getBank().get(click[0]).getCount();
+					}
+					if (player.getBank().getWithdrawNotes()) {
+						if (player.getInv().addItem(player.getBank().getSlot(click[0]), player.getBank().getWithdrawNotes(), amt)) {
+							player.getBank().getBank().get(click[0]).decreaseCount(amt);
+						}
+					} else {
+						for (int i = 0; i < amt; i++) {
+							if (player.getInv().searchInventorySpace()) {
+								if (player.getInv().addItem(player.getBank().getSlot(click[0]), player.getBank().getWithdrawNotes(), 1)) {
+									player.getBank().getBank().get(click[0]).decreaseCount(1);
+								}
+							} else {
+								return;
+							}
+						}
+					}
 				} else if (str[0].equals("<html>Attack")) {
 					click[2] = 1;
 					String t = "";
@@ -722,6 +851,61 @@ public class Game extends JPanel implements ActionListener, KeyListener {
     				player.getInv().highlightSlot(click[0]);
     			} else if (str[0].equals("<html>Drop")) {
 					player.dropSlot(click[0]);
+    			} else if (str[0].equals("<html>Deposit")) {
+    				int amt = 1;
+					if (str[1].equals("5") || str[1].equals("10") || str[1].equals("100")) {
+						amt = Integer.parseInt(str[1]);
+					} else if (str[1].equals("all")) {
+						if (player.getInv().getInventory().get(click[0]).getIsNoted()) {
+							amt = player.getInv().getInventory().get(click[0]).getCount();
+						} else {
+							amt = Inventory.getInventorySize();
+						}
+					}
+					int itemNum = player.getInv().getInventory().get(click[0]).getItem();
+					if (player.getInv().getInventory().get(click[0]).getIsNoted()) {
+						if (player.getBank().addItem(itemNum, amt)) {
+							player.getInv().getInventory().get(click[0]).setCount(player.getInv().getInventory().get(click[0]).getCount() - amt);
+						}
+					} else {
+						int curr = 0;
+						for (int b = 0; b < Inventory.getInventorySize(); b++) {
+	    					if ((player.getInv().getSlot(b) == itemNum) && !player.getInv().getInventory().get(b).getIsNoted()) {
+	    						if (player.getBank().addItem(itemNum, 1)) {
+	    							player.getInv().decreaseSlot(b);
+	    							curr++;
+	    							if (curr >= amt) {
+	    								break;
+	    							}
+	    						}
+	    					}
+	    				}
+					}
+    			} else if (str[0].equals("<html>Withdraw")) {
+    				int amt = 1;
+					if (str[1].equals("5") || str[1].equals("10") || str[1].equals("100")) {
+						amt = Integer.parseInt(str[1]);
+						if (amt > player.getBank().getBank().get(click[0]).getCount()) {
+							amt = player.getBank().getBank().get(click[0]).getCount();
+						}
+					} else if (str[1].equals("all")) {
+						amt = player.getBank().getBank().get(click[0]).getCount();
+					}
+					if (player.getBank().getWithdrawNotes()) {
+						if (player.getInv().addItem(player.getBank().getSlot(click[0]), player.getBank().getWithdrawNotes(), amt)) {
+							player.getBank().getBank().get(click[0]).decreaseCount(amt);
+						}
+					} else {
+						for (int i = 0; i < amt; i++) {
+							if (player.getInv().searchInventorySpace()) {
+								if (player.getInv().addItem(player.getBank().getSlot(click[0]), player.getBank().getWithdrawNotes(), 1)) {
+									player.getBank().getBank().get(click[0]).decreaseCount(1);
+								}
+							} else {
+								return;
+							}
+						}
+					}
     			} else if (str[0].equals("<html>Attack")) {
     				click[2] = 1;
 					String t = "";

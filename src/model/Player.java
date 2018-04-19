@@ -46,6 +46,8 @@ public class Player {
 	private Enemy inCombatWith = null;
 	private double attackTime = 0;
 	private boolean autoRetaliate = false;
+	private static int bankSize = 100;
+	private Bank bank;
 	
 	private int[] statXP = new int[skillNum];
 	
@@ -60,6 +62,7 @@ public class Player {
 	
 	private static String userFile = "resources/userFile";
 	private static String playerDataFile = "resources/playerDataFile";
+	private String userBankfile;
 	
 	
 	private final int DEFAULTX = 50;
@@ -68,6 +71,7 @@ public class Player {
 	public Player(String user, int width, int height) {
 		makePassword();
 		this.username = user;
+		this.userBankfile = "resources/" + this.username;
 		this.xLoc = DEFAULTX;
 		this.yLoc = DEFAULTY;
 		this.inv = new Inventory(width, height);
@@ -78,6 +82,7 @@ public class Player {
 		}
 		this.path = new ArrayList<Node>();
 		this.chatbox = new JTextPane();
+		this.bank = new Bank(10, 14, this.bankSize, new int[0][0]);
 		try {
 			writePlayerData();
 			Files.write(Paths.get(userFile), (this.username + System.getProperty("line.separator")).getBytes(), StandardOpenOption.APPEND);
@@ -94,14 +99,15 @@ public class Player {
 		this.inv = new Inventory(width, height);
 		this.currHealth = this.maxHealth; //TEMP------
 		for (int i = 0; i < Inventory.getInventorySize(); i++) {
-			this.inv.setSlot(i, Integer.parseInt(arr[4 + i]));
+			this.inv.setSlot(i, Integer.parseInt(arr[4 + i]), arr[4 + Inventory.getInventorySize() + i].equals("true"), Integer.parseInt(arr[4 + 2*Inventory.getInventorySize() + i]));
 		}
 		for (int j = 0; j < skillNum; j++) {
-			this.statXP[j] = Integer.parseInt(arr[4 + Inventory.getInventorySize() + j]);
+			this.statXP[j] = Integer.parseInt(arr[4 + 3*Inventory.getInventorySize() + j]);
 		}
 		this.target = null;
 		this.path = new ArrayList<Node>();
 		this.chatbox = new JTextPane();
+		this.bank = new Bank(10, 14, this.bankSize, new int[0][0]);
 	}
 	
 	private void makePassword() {
@@ -175,7 +181,7 @@ public class Player {
 	
 	public static Player loadPlayer(String user, int width, int height) throws FileNotFoundException, UnsupportedEncodingException {
 		Scanner inFile = null;
-		String[] playerArr = new String[4 + Inventory.getInventorySize() + skillNum];
+		String[] playerArr = new String[4 + 3*Inventory.getInventorySize() + skillNum];
 		try {
 			inFile = new Scanner(new File(playerDataFile));
 		} catch (FileNotFoundException e) {
@@ -202,13 +208,45 @@ public class Player {
 				for (int i = 0; i < Inventory.getInventorySize(); i++) {
 					playerArr[4 + i] = arr[4 + i];
 				}
+				for (int i = 0; i < Inventory.getInventorySize(); i++) {
+					playerArr[4 + Inventory.getInventorySize() + i] = arr[4 + Inventory.getInventorySize() + i];
+				}
+				for (int i = 0; i < Inventory.getInventorySize(); i++) {
+					playerArr[4 + 2*Inventory.getInventorySize() + i] = arr[4 + 2*Inventory.getInventorySize() + i];
+				}
 				for (int j = 0; j < skillNum; j++) {
-					playerArr[4 + Inventory.getInventorySize() + j] = arr[4 + Inventory.getInventorySize() + j];
+					playerArr[4 + 3*Inventory.getInventorySize() + j] = arr[4 + 3*Inventory.getInventorySize() + j];
 				}
 				return new Player(playerArr, width, height);
 			}
 		}
 		return null;
+	}
+	
+	public void loadBank(String user) throws FileNotFoundException, UnsupportedEncodingException {
+		int[][] bankArr = new int[2][Player.bankSize];
+		Scanner inFile = null;
+		try {
+			inFile = new Scanner(new File(this.userBankfile));
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+		
+		ArrayList<String> tmp = new ArrayList<String>();
+		
+	    while (inFile.hasNext()) {
+	    	tmp.add(inFile.nextLine());
+	    }
+	    inFile.close();
+    
+		String[] arr1 = tmp.get(0).split(" ");
+		String[] arr2 = tmp.get(1).split(" ");
+		for (int i = 0; i < arr1.length; i++) {
+			bankArr[0][i] = Integer.parseInt(arr1[i]);
+			bankArr[1][i] = Integer.parseInt(arr2[i]);
+		}
+		
+		this.bank = new Bank(10, 14, this.bankSize, bankArr);
 	}
 	
 	public static Player makeAccount(String user, int width, int height) {
@@ -451,7 +489,7 @@ public class Player {
 						.getObj()
 						.start(state);
 				if (tmp != null) {
-					inv.addItem(tmp[0]);
+					inv.addItem(tmp[0], false, 1);
 					addXP(state.tiles.get(target[1] - yLoc + 7).get(target[0] - xLoc + 15).getObj().getType(), tmp[1]);
 					path.clear();
 					target = null;
@@ -503,7 +541,8 @@ public class Player {
 				}
 				this.xDir = 0;
 				this.yDir = 0;
-				System.out.println("I moved to " + this.xLoc + ", " + this.yLoc);
+				System.out.println("I moved to " + this.xLoc + ", " + this.yLoc
+						);
 				//System.out.println("d");
 				//System.out.println("moved to " + xLoc + ", " + yLoc);
 				updateState = -1;
@@ -573,12 +612,17 @@ public class Player {
 	
 	public void pickUp(int item, int[] tmp) {
 		if ((xLoc == tmp[0]) && (yLoc == tmp[1])) {
-			if (inv.addItem(item)) {
-				state.itemTiles[tmp[0]][tmp[1]].remove(new Integer(item));
-			} else {
-				Game.printText(chatbox, "Your inventory is full.\n", Color.GRAY);
+			for (int i = 0; i < state.itemTiles[tmp[0]][tmp[1]].size(); i++) {
+				if (state.itemTiles[tmp[0]][tmp[1]].get(i)[0] == item) {
+					if (inv.addItem(state.itemTiles[tmp[0]][tmp[1]].get(i)[0], state.itemTiles[tmp[0]][tmp[1]].get(i)[1] == 1, state.itemTiles[tmp[0]][tmp[1]].get(i)[2])) {
+						state.itemTiles[tmp[0]][tmp[1]].remove(state.itemTiles[tmp[0]][tmp[1]].get(i));
+					} else {
+						Game.printText(chatbox, "Your inventory is full.\n", Color.GRAY);
+					}
+					pickItem = 0;
+					return;
+				}
 			}
-			pickItem = 0;
 		} else {
 			moveTo(tmp[0], tmp[1], tmp[2] == 1, tmp[3], tmp[4], false);
 			pickItem = item;
@@ -589,9 +633,9 @@ public class Player {
 		int item = inv.getSlot(slot);
 		if (item != 0) {
 			if (state.itemTiles[xLoc][yLoc] == null) {
-				state.itemTiles[xLoc][yLoc] = new ArrayList<Integer>();
+				state.itemTiles[xLoc][yLoc] = new ArrayList<Integer[]>();
 			}
-			state.itemTiles[xLoc][yLoc].add(item);
+			state.itemTiles[xLoc][yLoc].add(new Integer[] {item, inv.getInventory().get(slot).getIsNoted() ? 1 : 0, inv.getInventory().get(slot).getCount()});
 			state.itemTiles[xLoc][yLoc].sort(null);
 		}
 		return (inv.dropSlot(slot));
@@ -605,6 +649,12 @@ public class Player {
 		String s = this.username + " " + this.password + " " + this.xLoc + " " + this.yLoc + " ";
 		for (int i = 0; i < Inventory.getInventorySize(); i++) {
 			s += inv.getSlot(i) + " ";
+		}
+		for (int i = 0; i < Inventory.getInventorySize(); i++) {
+			s += inv.getInventory().get(i).getIsNoted() + " ";
+		}
+		for (int i = 0; i < Inventory.getInventorySize(); i++) {
+			s += inv.getInventory().get(i).getCount() + " ";
 		}
 		for (int j = 0; j < skillNum; j++) {
 			s += statXP[j] + " ";
@@ -634,6 +684,10 @@ public class Player {
 	
 	public Inventory getInv() {
 		return this.inv;
+	}
+	
+	public Bank getBank() {
+		return this.bank;
 	}
 	
 	public int getState(int n) {

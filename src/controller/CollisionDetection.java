@@ -3,11 +3,13 @@ package controller;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 
+import model.BankTile;
 import model.Board;
 import model.BoardState;
 import model.BoardTile;
 import model.InventoryTile;
 import model.Player;
+import view.Game;
 import view.ImageEnum;
 
 public class CollisionDetection {
@@ -16,7 +18,24 @@ public class CollisionDetection {
 		int[] tmp = new int[6];
 		ArrayList<ArrayList<BoardTile>> tiles = state.tiles;
 		Rectangle bdClick = new Rectangle(x, y, 1, 1);
-		if ((x <= board.getWidth() - ImageEnum.INVENTORY.getWidth() || (y <= board.getHeight() - ImageEnum.INVENTORY.getHeight()))) {
+		if (Game.bankOpen && bdClick.intersects(new Rectangle((Game.mainController.getWidth() / 2) - (ImageEnum.BANK.getImg().getWidth() / 2), 50, ImageEnum.BANK.getWidth(), ImageEnum.BANK.getHeight()))) {
+			int num = 0;
+			for (BankTile b : player.getBank().getBank()) {
+				Rectangle bdBt = new Rectangle((int) ((Game.mainController.getWidth() / 2) - (ImageEnum.BANK.getImg().getWidth() / 2) + (.03 * ImageEnum.BANK.getWidth()) + (b.getXLoc() * (ImageEnum.ICONBLANK.getWidth() + .02 * ImageEnum.BANK.getWidth()))),
+						(int) (50 + (.02 * ImageEnum.BANK.getHeight()) + (b.getYLoc() * (ImageEnum.ICONBLANK.getHeight() + .02 * ImageEnum.BANK.getWidth()))),
+				ImageEnum.ICONBLANK.getWidth(),
+				ImageEnum.ICONBLANK.getHeight());
+				if (bdBt.intersects(bdClick)) {
+					tmp[0] = num;
+					tmp[5] = 2;
+					return tmp;
+				}
+				num++;
+			}
+			tmp[0] = -1;
+			tmp[5] = 1;
+			return tmp;
+		} else if ((x <= board.getWidth() - ImageEnum.INVENTORY.getWidth() || (y <= board.getHeight() - ImageEnum.INVENTORY.getHeight()))) {
 			for (ArrayList<BoardTile> col : tiles) {
 				for (BoardTile bt : col) {
 					Rectangle bdBt = new Rectangle(bt.getXLoc(), bt.getYLoc(), ImageEnum.TILEGRASS.getWidth(), ImageEnum.TILEGRASS.getHeight());

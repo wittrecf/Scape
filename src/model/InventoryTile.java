@@ -11,15 +11,17 @@ public class InventoryTile {
 	private int item;
 	private BufferedImage currImg;
 	private boolean isHighlighted;
+	private boolean isNoted;
+	private int count;
 
 	private static int width = ImageEnum.ICONBLANK.getWidth();
 	private static int height = ImageEnum.ICONBLANK.getHeight();
 	
-	public InventoryTile(int xLoc, int yLoc, int item){
+	public InventoryTile(int xLoc, int yLoc){
 		this.itemType = pickItem(item);
 		this.xLoc = xLoc;
 		this.yLoc = yLoc;
-		this.item = item;
+		this.item = 0;
 		this.currImg = itemType.getImg()[0];
 		this.isHighlighted = false;
 	}
@@ -55,14 +57,35 @@ public class InventoryTile {
 		return item;
 	}
 	
-	public void setItem(int itemId) {
+	public void setItem(int itemId, boolean noted, int amount) {
 		this.item = itemId;
 		this.itemType = pickItem(itemId);
-		this.currImg = itemType.getImg()[0];
+		this.isNoted = noted;
+		this.count = amount;
+		if (noted) {
+			this.currImg = itemType.getImg()[0];
+		} else {
+			this.currImg = itemType.getImg()[0];
+		}
 	}
 	
 	public BufferedImage getItemImg() {
 		return currImg;
+	}
+	
+	public void setCount(int c) {
+		this.count = c;
+		if (this.count <= 0) {
+			this.setItem(0, false, 0);
+		}
+	}
+	
+	public int getCount() {
+		return this.count;
+	}
+	
+	public boolean getIsNoted() {
+		return this.isNoted;
 	}
 
 	public static int getWidth() {

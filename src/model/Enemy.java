@@ -10,7 +10,7 @@ import view.ImageEnum;
 public class Enemy extends NPC {
 	private int currHealth;
 	private int maxHealth;
-	private ArrayList<Integer[]> drops;
+	private ArrayList<ArrayList<Integer[]>> drops;
 	private int damage;
 	private Player inCombatWith;
 	private int attackSpeed = 6;
@@ -25,21 +25,24 @@ public class Enemy extends NPC {
 		this.maxHealth = h;
 		this.currHealth = h;
 		this.damage = d;
-		this.drops = new ArrayList<Integer[]>();
+		this.drops = new ArrayList<ArrayList<Integer[]>>();
 	}
 	
 	public void damage(int amount) {
 		this.reducehealth(amount);
 	}
 	
-	public int[] die() {
+	public ArrayList<Integer[]> die() {
 		Random rng = new Random();
+		ArrayList<Integer[]> tmp;
 		if (drops.size() > 0) {
 			int dropNum = rng.nextInt(drops.size());
-			return new int[] {drops.get(dropNum)[0].intValue(), drops.get(dropNum)[1].intValue()};
+			tmp = drops.get(dropNum);
 		} else {
-			return new int[]{0,1};
+			tmp = new ArrayList<Integer[]>();
+			tmp.add(new Integer[] {0, 0, 1});
 		}
+		return tmp;
 	}
 	
 	private boolean reducehealth(int amount) {
@@ -191,12 +194,22 @@ public class Enemy extends NPC {
 		this.maxHealth = health;
 	}
 
-	public ArrayList<Integer[]> getDrops() {
+	public ArrayList<ArrayList<Integer[]>> getDrops() {
 		return drops;
 	}
 
-	public void addDrop(int drop, int ammount) {
-		this.drops.add(new Integer[] {drop, ammount});
+	public void addDrop(int[] drop, int[] noted, int[] amount) {
+		ArrayList<Integer[]> tmp = new ArrayList<Integer[]>();
+		for (int i = 0; i < drop.length; i++) {
+			if (noted[i] == 0) {
+				for (int j = 0; j < amount[i]; j++) {
+					tmp.add(new Integer[] {drop[i], noted[i], 1});
+				}
+			} else {
+				tmp.add(new Integer[] {drop[i], noted[i], amount[i]});
+			}
+		}
+		this.drops.add(tmp);
 	}
 
 	public int getDamage() {
