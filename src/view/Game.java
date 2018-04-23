@@ -90,6 +90,9 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 	public String spokenText = "";
 	public double spokenTime = 0;
 	
+	public int dx;
+	public int dy;
+	
 	public static boolean bankOpen = false;
 	
 	public JLabel label;
@@ -333,22 +336,38 @@ public class Game extends JPanel implements ActionListener, KeyListener {
     		g2.drawString(player.getXLoc() + ":" + player.getYLoc(), player.getXLoc() + 15 + player.getXOff(), player.getYLoc() + 15 + player.getYOff());
 			g2.drawImage(ImageEnum.INVENTORY.getImg(), board.getWidth() - ImageEnum.INVENTORY.getWidth(), board.getHeight() - ImageEnum.INVENTORY.getHeight(), null);
 			
+			int num = 0;
 			for (InventoryTile i : player.getInv().getInventory()) {
 				g2.drawImage(ImageEnum.ICONBLANK.getImg(),
 						(int) (board.getWidth() - ImageEnum.INVENTORY.getWidth() + (.06 * ImageEnum.INVENTORY.getWidth()) + (i.getXLoc() * (ImageEnum.ICONBLANK.getWidth() + .04 * ImageEnum.INVENTORY.getWidth()))),
 						(int) (board.getHeight() - ImageEnum.INVENTORY.getHeight() + (.04 * ImageEnum.INVENTORY.getHeight()) + (i.getYLoc() * (ImageEnum.ICONBLANK.getHeight() + .04 * ImageEnum.INVENTORY.getWidth()))),
 						null);
-				if (i.getItem() > 0) {
-					g2.drawImage(i.getItemImg(),
-							(int) (board.getWidth() - ImageEnum.INVENTORY.getWidth() + (.06 * ImageEnum.INVENTORY.getWidth()) + (i.getXLoc() * (ImageEnum.ICONBLANK.getWidth() + .04 * ImageEnum.INVENTORY.getWidth()))),
-							(int) (board.getHeight() - ImageEnum.INVENTORY.getHeight() + (.04 * ImageEnum.INVENTORY.getHeight()) + (i.getYLoc() * (ImageEnum.ICONBLANK.getHeight() + .04 * ImageEnum.INVENTORY.getWidth()))),
-							null);
-					if (i.getIsNoted()) {
-						g2.drawString(Integer.toString(i.getCount()),
+				if ((click != null) && (click[0] == num)) {
+					if (i.getItem() > 0) {
+						g2.drawImage(i.getItemImg(),
+								(int) (board.getWidth() - ImageEnum.INVENTORY.getWidth() + (.06 * ImageEnum.INVENTORY.getWidth()) + (i.getXLoc() * (ImageEnum.ICONBLANK.getWidth() + .04 * ImageEnum.INVENTORY.getWidth()))) + dx,
+								(int) (board.getHeight() - ImageEnum.INVENTORY.getHeight() + (.04 * ImageEnum.INVENTORY.getHeight()) + (i.getYLoc() * (ImageEnum.ICONBLANK.getHeight() + .04 * ImageEnum.INVENTORY.getWidth()))) + dy,
+								null);
+						if (i.getIsNoted()) {
+							g2.drawString(Integer.toString(i.getCount()),
+									(int) (board.getWidth() - ImageEnum.INVENTORY.getWidth() + (.06 * ImageEnum.INVENTORY.getWidth()) + (i.getXLoc() * (ImageEnum.ICONBLANK.getWidth() + .04 * ImageEnum.INVENTORY.getWidth()))) + dx,
+									10 + (int) (board.getHeight() - ImageEnum.INVENTORY.getHeight() + (.04 * ImageEnum.INVENTORY.getHeight()) + (i.getYLoc() * (ImageEnum.ICONBLANK.getHeight() + .04 * ImageEnum.INVENTORY.getWidth()))) + dy);
+						}
+					}
+				} else {
+					if (i.getItem() > 0) {
+						g2.drawImage(i.getItemImg(),
 								(int) (board.getWidth() - ImageEnum.INVENTORY.getWidth() + (.06 * ImageEnum.INVENTORY.getWidth()) + (i.getXLoc() * (ImageEnum.ICONBLANK.getWidth() + .04 * ImageEnum.INVENTORY.getWidth()))),
-								10 + (int) (board.getHeight() - ImageEnum.INVENTORY.getHeight() + (.04 * ImageEnum.INVENTORY.getHeight()) + (i.getYLoc() * (ImageEnum.ICONBLANK.getHeight() + .04 * ImageEnum.INVENTORY.getWidth()))));
+								(int) (board.getHeight() - ImageEnum.INVENTORY.getHeight() + (.04 * ImageEnum.INVENTORY.getHeight()) + (i.getYLoc() * (ImageEnum.ICONBLANK.getHeight() + .04 * ImageEnum.INVENTORY.getWidth()))),
+								null);
+						if (i.getIsNoted()) {
+							g2.drawString(Integer.toString(i.getCount()),
+									(int) (board.getWidth() - ImageEnum.INVENTORY.getWidth() + (.06 * ImageEnum.INVENTORY.getWidth()) + (i.getXLoc() * (ImageEnum.ICONBLANK.getWidth() + .04 * ImageEnum.INVENTORY.getWidth()))),
+									10 + (int) (board.getHeight() - ImageEnum.INVENTORY.getHeight() + (.04 * ImageEnum.INVENTORY.getHeight()) + (i.getYLoc() * (ImageEnum.ICONBLANK.getHeight() + .04 * ImageEnum.INVENTORY.getWidth()))));
+						}
 					}
 				}
+				num++;
 			}
 			
 			if (click != null) {
@@ -585,6 +604,7 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 				s.add("<html>Withdraw 5 <font color=\"#f8d56b\"> " + InventoryTile.pickItem(player.getBank().getSlot(click[0])).getItemName() + " </font></html>");
 				s.add("<html>Withdraw 10 <font color=\"#f8d56b\"> " + InventoryTile.pickItem(player.getBank().getSlot(click[0])).getItemName() + " </font></html>");
 				s.add("<html>Withdraw 100 <font color=\"#f8d56b\"> " + InventoryTile.pickItem(player.getBank().getSlot(click[0])).getItemName() + " </font></html>");
+				s.add("<html>Withdraw all-but-1 <font color=\"#f8d56b\"> " + InventoryTile.pickItem(player.getBank().getSlot(click[0])).getItemName() + " </font></html>");
 				s.add("<html>Withdraw all <font color=\"#f8d56b\"> " + InventoryTile.pickItem(player.getBank().getSlot(click[0])).getItemName() + " </font></html>");
 			}
 		}
@@ -781,6 +801,8 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 						if (amt > player.getBank().getBank().get(click[0]).getCount()) {
 							amt = player.getBank().getBank().get(click[0]).getCount();
 						}
+					} else if (str[1].equals("all-but-1")) {
+						amt = player.getBank().getBank().get(click[0]).getCount() - 1;
 					} else if (str[1].equals("all")) {
 						amt = player.getBank().getBank().get(click[0]).getCount();
 					}
@@ -888,6 +910,8 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 						if (amt > player.getBank().getBank().get(click[0]).getCount()) {
 							amt = player.getBank().getBank().get(click[0]).getCount();
 						}
+					} else if (str[1].equals("all-but-1")) {
+						amt = player.getBank().getBank().get(click[0]).getCount() - 1;
 					} else if (str[1].equals("all")) {
 						amt = player.getBank().getBank().get(click[0]).getCount();
 					}
@@ -935,8 +959,20 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 	    }
 
 	    public void mouseReleased(MouseEvent e){
-	    	click = CollisionDetection.checkCollisionsTile(e.getButton(), e.getX(), e.getY(), state, board, player);
-	    	reactClick(e);
+	    	if ((dx == 0) && (dy == 0)) {
+	    		click = CollisionDetection.checkCollisionsTile(e.getButton(), e.getX(), e.getY(), state, board, player);
+	    		reactClick(e);
+	    	} else {
+	    		int tmpSlot = click[0];
+	    		click = CollisionDetection.checkCollisionsTile(e.getButton(), e.getX(), e.getY(), state, board, player);
+	    		if ((click[5] == 1) && (click[0] > -1)) {
+	    			player.getInv().swapSlots(tmpSlot, click[0]);
+	    		} else if (click[5] == 0) {
+	    			player.dropSlot(tmpSlot);
+	    		}
+	    	}
+	    	dx = 0;
+	    	dy = 0;
 	    }
 	    
 	    public void mouseEntered(MouseEvent e) {
@@ -971,7 +1007,14 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 	
 	class PopupMotionListener implements MouseMotionListener {
 		public void mouseDragged(MouseEvent e) {
-			// TODO Auto-generated method stub
+			int[] clickTmp = CollisionDetection.checkCollisionsTile(e.getButton(), mouseLoc[0], mouseLoc[1], state, board, player);
+			if (clickTmp[5] == 1) {
+				dx = e.getX() - mouseLoc[0];
+				dy = e.getY() - mouseLoc[1];
+				if ((dx > 0) || (dy > 0)) {
+					hoverText = "";
+				}
+			}
 		}
 	
 		public void mouseMoved(MouseEvent e) {

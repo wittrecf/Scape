@@ -62,7 +62,6 @@ public class GameTimer extends TimerTask {
 							if ((state.npcTiles[i][j].get(x)).move()) {
 								return;
 							}
-							System.out.println("movement");
 						}
     					if (state.npcTiles[i][j].get(x) instanceof Enemy) {
     						if (((Enemy) (state.npcTiles[i][j].get(x))).getCurrHealth() <= 0) {
@@ -88,13 +87,7 @@ public class GameTimer extends TimerTask {
     								((Enemy) (state.npcTiles[i][j].get(x))).attack(null);
     							}
     						} else if ((state.npcTiles[i][j].get(x).getTarget() == null) && (((Enemy) (state.npcTiles[i][j].get(x))).getInCombatWith() == null)) {
-    							System.out.println("wanderin");
     							//((Enemy) (state.npcTiles[i][j].get(x))).wander(10);
-    						} else {
-    							System.out.println("no mans land");
-    							System.out.println(state.npcTiles[i][j].get(x).getTarget());
-    							System.out.println(((Enemy) (state.npcTiles[i][j].get(x))).getInCombatWith());
-    							System.out.println("wrap no mans");
     						}
     					} else if (state.npcTiles[i][j].get(x).getTarget() == null){
     						//state.npcTiles[i][j].get(x).wander(100);

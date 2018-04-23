@@ -483,7 +483,7 @@ public class Player {
 			System.out.println(target[1] + "-" + yLoc + "+" + 7);
 			System.out.println((target[0] - xLoc + 15) + ", " + (target[1] - yLoc + 7));
 			if (this.inv.searchInventorySpace()) {
-				System.out.println(state.tiles.get(target[1] - yLoc + 7).get(target[0] - xLoc + 15).getObj().getStarted());
+				//System.out.println(state.tiles.get(target[1] - yLoc + 7).get(target[0] - xLoc + 15).getObj().getStarted());
 				int[] tmp = state.tiles.get(target[1] - yLoc + 7)
 						.get(target[0] - xLoc + 15)
 						.getObj()
@@ -636,7 +636,7 @@ public class Player {
 				state.itemTiles[xLoc][yLoc] = new ArrayList<Integer[]>();
 			}
 			state.itemTiles[xLoc][yLoc].add(new Integer[] {item, inv.getInventory().get(slot).getIsNoted() ? 1 : 0, inv.getInventory().get(slot).getCount()});
-			state.itemTiles[xLoc][yLoc].sort(null);
+			//state.itemTiles[xLoc][yLoc].sort(null); -----------TO BE FIXED
 		}
 		return (inv.dropSlot(slot));
 	}

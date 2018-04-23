@@ -55,7 +55,7 @@ public class Enemy extends NPC {
 	}
 	
 	private void findDir() {
-		System.out.println("checking tile at: " + target[0] + ", " + target[1]);
+		//System.out.println("checking tile at: " + target[0] + ", " + target[1]);
 		int x = target[0] - this.xLoc;
 		int y = target[1] - this.yLoc;
 		if (x != 0) {
@@ -64,7 +64,7 @@ public class Enemy extends NPC {
 		if (y != 0) {
 			this.yDir = y / Math.abs(y);
 		}
-		System.out.println("checking into at: " + (this.xLoc + this.xDir) + ", " + (this.yLoc + this.yDir));
+		//System.out.println("checking into at: " + (this.xLoc + this.xDir) + ", " + (this.yLoc + this.yDir));
 		if (!(Game.state.mapTiles[this.xLoc + this.xDir][this.yLoc + this.yDir] != 0) || !(Game.state.objTiles[this.xLoc + this.xDir][this.yLoc + this.yDir] == 0) || (Player.checkAdjacency(true, false, new int[] {this.xLoc, this.yLoc}, new int[] {target[0], target[1]}) && !Player.checkAdjacency(false, false, new int[] {this.xLoc, this.yLoc}, new int[] {target[0], target[1]}))) {
 			if ((Game.state.mapTiles[this.xLoc][this.yLoc + this.yDir] != 0) && (Game.state.objTiles[this.xLoc][this.yLoc + this.yDir] == 0)) {
 				this.xDir = 0;
@@ -75,7 +75,7 @@ public class Enemy extends NPC {
 				this.yDir = 0;
 			}
 		}
-		System.out.println("xdir: " + this.xDir + ", ydir: " + this.yDir);
+		//System.out.println("xdir: " + this.xDir + ", ydir: " + this.yDir);
 	}
 	
 	@Override
@@ -116,12 +116,10 @@ public class Enemy extends NPC {
 				//System.out.println("moved to " + xLoc + ", " + yLoc);
 			}
 		} else if (inCombatWith == null) {
-			System.out.println("move in super");
 			return(super.move());
 		} else if (target != null) {
-			System.out.println("is " + xLoc + ", " + yLoc + " nearby to " + target[0] + ", " + target[1] + ": " + Player.checkAdjacency(false, false, new int[] {xLoc, yLoc}, new int[] {target[0], target[1]}));
-			System.out.println("is " + xLoc + ", " + yLoc + " nearby to " + this.getInCombatWith().getXLoc() + ", " + this.getInCombatWith().getYLoc() + ": " + Player.checkAdjacency(false, false, new int[] {xLoc, yLoc}, new int[] {this.getInCombatWith().getXLoc(), this.getInCombatWith().getYLoc()}));
-			System.out.println("shouldnt be here");
+			//EnemySystem.out.println("is " + xLoc + ", " + yLoc + " nearby to " + target[0] + ", " + target[1] + ": " + Player.checkAdjacency(false, false, new int[] {xLoc, yLoc}, new int[] {target[0], target[1]}));
+			//System.out.println("is " + xLoc + ", " + yLoc + " nearby to " + this.getInCombatWith().getXLoc() + ", " + this.getInCombatWith().getYLoc() + ": " + Player.checkAdjacency(false, false, new int[] {xLoc, yLoc}, new int[] {this.getInCombatWith().getXLoc(), this.getInCombatWith().getYLoc()}));
 		}
 		return false;
 	}
@@ -130,7 +128,6 @@ public class Enemy extends NPC {
 		if (this.currHealth > 0) {
 			this.inCombatWith = p;
 			if ((p != null) && (Player.checkAdjacency(false, false, new int[] {xLoc, yLoc}, new int[] {p.getXLoc(), p.getYLoc()}))) {
-				System.out.println("try to attack");
 				if ((p.getCurrHealth() > 0) && (System.currentTimeMillis() - this.getAttackTime() > this.getAttackSpeed()*100)) {
 					p.damage(this.damage);
 					if ((p.getInCombatWith() == null) && (p.getAutoRetaliate())) {
@@ -143,7 +140,6 @@ public class Enemy extends NPC {
 					this.attackTime = System.currentTimeMillis();
 				}
 			} else if ((p != null) && ((target == null) || ((target != null) && !Player.checkAdjacency(false, false, new int[] {xLoc, yLoc}, new int[] {p.getXLoc(), p.getYLoc()})))) {
-				System.out.println("cant attack");
 				int tmpX;
 				int tmpY;
 				if ((xLoc == p.getXLoc()) && (yLoc == p.getYLoc())) {
@@ -169,11 +165,8 @@ public class Enemy extends NPC {
 					tmpX = p.getXLoc();
 					tmpY = p.getYLoc();
 				}
-				System.out.println("GOTO: " + tmpX + ", " + tmpY + " from " + xLoc + ", " + yLoc);
 				//this.attackTime = System.currentTimeMillis();
 				setTarget(tmpX, tmpY);
-			} else {
-				System.out.println("umm why are you here: " + (target == null));
 			}
 		}
 	}

@@ -120,6 +120,15 @@ public class Inventory {
     	}
     }
     
+    public void swapSlots(int slot1, int slot2) {
+    	InventoryTile tmp = inventorySlots.get(slot1);
+    	int tmpItem = tmp.getItem();
+    	boolean tmpNoted = tmp.getIsNoted();
+    	int tmpCount = tmp.getCount();
+    	this.setSlot(slot1, inventorySlots.get(slot2).getItem(), inventorySlots.get(slot2).getIsNoted(), inventorySlots.get(slot2).getCount());
+    	this.setSlot(slot2, tmpItem, tmpNoted, tmpCount);
+    }
+    
     public void setSlot(int slotNum, int item, boolean noted, int amount) {
     	inventorySlots.get(slotNum).setItem(item, noted, amount);
     }
