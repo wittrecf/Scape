@@ -49,7 +49,7 @@ public class Inventory {
     
     public boolean addItem(int itemID, boolean noted, int amount) {
     	int x = findExistingStack(itemID);
-    	System.out.println("adding..");
+    	System.out.println("adding " + itemID);
     	if (noted && (x != -1)) {
     		inventorySlots.get(x).setCount(inventorySlots.get(x).getCount() + amount);
     		return true;

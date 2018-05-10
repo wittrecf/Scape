@@ -7,12 +7,7 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.GridLayout;
 import java.awt.Insets;
-import java.awt.LayoutManager;
-import java.awt.Menu;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -28,6 +23,7 @@ import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.sql.Timestamp;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -35,6 +31,7 @@ import java.util.Timer;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
@@ -43,9 +40,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
-import javax.swing.KeyStroke;
-import javax.swing.border.EmptyBorder;
 import javax.swing.text.AttributeSet;
+import javax.swing.text.MaskFormatter;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
@@ -61,7 +57,6 @@ import model.Enemy;
 import model.Inventory;
 import model.InventoryTile;
 import model.Item;
-import model.KeyType;
 import model.NPC;
 import model.TileRock;
 import model.TileTree;
@@ -89,11 +84,15 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 	public String hoverText = "";
 	public String spokenText = "";
 	public double spokenTime = 0;
+	public int makeNum = 0;
+	public String makeXString = "";
+	public String makeXType = "";
 	
 	public int dx;
 	public int dy;
 	
 	public static boolean bankOpen = false;
+	public boolean makeXOpen = false;
 	
 	public JLabel label;
 	
@@ -183,6 +182,7 @@ public class Game extends JPanel implements ActionListener, KeyListener {
         textField.setBackground(Color.LIGHT_GRAY);
         textField.setOpaque(true);
 		textField.setSelectionEnd(10);
+		textField.setText("Press enter to chat");
 		textField.addActionListener(this);
  
         textPane = player.getChatbox();
@@ -206,6 +206,8 @@ public class Game extends JPanel implements ActionListener, KeyListener {
     	add(textField);
     	add(scrollPane);
     	add(label);
+
+        //JOptionPane.showMessageDialog(null, this);
 		
 		centerX = ((board.getWidth() - ImageEnum.TILEGRASS.getWidth()) / 2) / ImageEnum.TILEGRASS.getWidth();
     	centerY = ((board.getHeight() - ImageEnum.TILEGRASS.getHeight()) / 2) / ImageEnum.TILEGRASS.getHeight();
@@ -217,9 +219,6 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 		this.addMouseListener(new PopClickListener());
 		this.addMouseMotionListener(new PopupMotionListener());
 		this.addKeyListener(this);
-		
-		this.getInputMap().put(KeyStroke.getKeyStroke("P"), "doSomething");
-		this.getActionMap().put("doSomething", new KeyType("P"));
 	}
 	
 	public void startup() {
@@ -322,9 +321,9 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 		    		}
 			    	g2.setColor(Color.WHITE);
 		    		g2.setFont(new Font("TimesRoman", Font.PLAIN, (int)(0.5*fontSize)));
-		    		g2.drawString(block.getXLoc() / ImageEnum.TILEGRASS.getWidth() + ":" + block.getYLoc() / ImageEnum.TILEGRASS.getHeight(), block.getXLoc() + 15 + player.getXOff(), block.getYLoc() + 15 + player.getYOff());
+		    		//g2.drawString(block.getXLoc() / ImageEnum.TILEGRASS.getWidth() + ":" + block.getYLoc() / ImageEnum.TILEGRASS.getHeight(), block.getXLoc() + 15 + player.getXOff(), block.getYLoc() + 15 + player.getYOff());
 		    		g2.setColor(Color.YELLOW);
-		    		g2.drawString(block.getXCoord() + ":" + block.getYCoord(), block.getXLoc() + 15 + player.getXOff(), block.getYLoc() + 40 + player.getYOff());
+		    		//g2.drawString(block.getXCoord() + ":" + block.getYCoord(), block.getXLoc() + 15 + player.getXOff(), block.getYLoc() + 40 + player.getYOff());
 					x++;
 		    	}
 		    	y++;
@@ -407,6 +406,7 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 			g2.drawString("Mining: " + player.getState(0), 5, 15);
 			g2.drawString("Woodcutting: " + player.getState(1), 5, 35);
 			g2.drawString("Fishing: " + player.getState(2), 5, 55);
+			g2.drawString("MakeXNum: " + makeXString, 5, 75);
 			
 			FontMetrics fm = this.getFontMetrics(new Font("TimesRoman", Font.PLAIN, (int)(0.5*fontSize)));
 			g2.setColor(Color.WHITE);
@@ -604,6 +604,7 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 				s.add("<html>Withdraw 5 <font color=\"#f8d56b\"> " + InventoryTile.pickItem(player.getBank().getSlot(click[0])).getItemName() + " </font></html>");
 				s.add("<html>Withdraw 10 <font color=\"#f8d56b\"> " + InventoryTile.pickItem(player.getBank().getSlot(click[0])).getItemName() + " </font></html>");
 				s.add("<html>Withdraw 100 <font color=\"#f8d56b\"> " + InventoryTile.pickItem(player.getBank().getSlot(click[0])).getItemName() + " </font></html>");
+				s.add("<html>Withdraw x <font color=\"#f8d56b\"> " + InventoryTile.pickItem(player.getBank().getSlot(click[0])).getItemName() + " </font></html>");
 				s.add("<html>Withdraw all-but-1 <font color=\"#f8d56b\"> " + InventoryTile.pickItem(player.getBank().getSlot(click[0])).getItemName() + " </font></html>");
 				s.add("<html>Withdraw all <font color=\"#f8d56b\"> " + InventoryTile.pickItem(player.getBank().getSlot(click[0])).getItemName() + " </font></html>");
 			}
@@ -634,7 +635,32 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 		return text;
 	}
 	
+	public static boolean isInteger(String str) {
+	    if (str == null) {
+	        return false;
+	    }
+	    int length = str.length();
+	    if (length == 0) {
+	        return false;
+	    }
+	    int i = 0;
+	    if (str.charAt(0) == '-') {
+	        if (length == 1) {
+	            return false;
+	        }
+	        i = 1;
+	    }
+	    for (; i < length; i++) {
+	        char c = str.charAt(i);
+	        if (c < '0' || c > '9') {
+	            return false;
+	        }
+	    }
+	    return true;
+	}
+	
 	public void actionPerformed(ActionEvent event) {
+		System.out.println("event");
 		if(event.getSource() == btnExit) {
 			this.shutdown();
 		} else if (event.getSource() == btnNote) {
@@ -645,21 +671,51 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 			}
 			player.getBank().setWithdrawNotes(!player.getBank().getWithdrawNotes());
 			this.requestFocusInWindow();
-		}
-		
-		String text = textField.getText();
-		text = formatText(text);
-		
-		if (!text.equals("")) {
-			appendToPane(textPane, "[" + new SimpleDateFormat("HH:mm").format(new Timestamp(System.currentTimeMillis())) + "] ", Color.BLACK);
-			appendToPane(textPane, player.getUsername(), Color.BLUE);
-			appendToPane(textPane, ": " + text + newline, Color.BLACK);
-			spokenText = text;
-			spokenTime = System.currentTimeMillis();
-			textField.setText("");
+		} else if (event.getSource() == textField) {
+			String text = textField.getText();
+			
+			if (!text.equals("")) {
+				text = formatText(text);
+				appendToPane(textPane, "[" + new SimpleDateFormat("HH:mm").format(new Timestamp(System.currentTimeMillis())) + "] ", Color.BLACK);
+				appendToPane(textPane, player.getUsername(), Color.BLUE);
+				appendToPane(textPane, ": " + text + newline, Color.BLACK);
+				spokenText = text;
+				spokenTime = System.currentTimeMillis();
+				textPane.setCaretPosition(textPane.getDocument().getLength());
+			}
+			textField.setText("Press enter to chat");
 			textPane.setCaretPosition(textPane.getDocument().getLength());
-		}
-		this.requestFocusInWindow();
+			this.requestFocusInWindow();
+		}/* else if (event.getSource() == makeX) {
+			String text = makeX.getText().trim();
+			System.out.println(text);
+			if (!text.equals("")) {
+				if (text.matches("-?\\d+")) {
+					makeNum = Integer.parseInt(text);
+				}
+				makeX.setText("");
+				makeXOpen = false;
+				if (makeNum > player.getBank().getBank().get(click[0]).getCount()) {
+					makeNum = player.getBank().getBank().get(click[0]).getCount();
+				}
+				if (player.getBank().getWithdrawNotes()) {
+					if (player.getInv().addItem(player.getBank().getSlot(click[0]), player.getBank().getWithdrawNotes(), makeNum)) {
+						player.getBank().getBank().get(click[0]).decreaseCount(makeNum);
+					}
+				} else {
+					for (int i = 0; i < makeNum; i++) {
+						if (player.getInv().searchInventorySpace()) {
+							if (player.getInv().addItem(player.getBank().getSlot(click[0]), player.getBank().getWithdrawNotes(), 1)) {
+								player.getBank().getBank().get(click[0]).decreaseCount(1);
+							}
+						} else {
+							return;
+						}
+					}
+				}
+			}
+			this.requestFocusInWindow();
+		}*/
 	}
 	
 	private static void appendToPane(JTextPane tp, String msg, Color c) {
@@ -684,32 +740,74 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 		player.moveTo(tmp[0], tmp[1], tmp[2] == 1, tmp[3], tmp[4], interact);
 	}
 	
+	public void processMakeX() {
+		if (makeXType.equals("BankWithdraw")) {
+			if (makeNum > player.getBank().getBank().get(click[0]).getCount()) {
+				makeNum = player.getBank().getBank().get(click[0]).getCount();
+			}
+			if (player.getBank().getWithdrawNotes()) {
+				if (player.getInv().addItem(player.getBank().getSlot(click[0]), player.getBank().getWithdrawNotes(), makeNum)) {
+					player.getBank().getBank().get(click[0]).decreaseCount(makeNum);
+				}
+			} else {
+				for (int i = 0; i < makeNum; i++) {
+					if (player.getInv().searchInventorySpace()) {
+						if (player.getInv().addItem(player.getBank().getSlot(click[0]), player.getBank().getWithdrawNotes(), 1)) {
+							player.getBank().getBank().get(click[0]).decreaseCount(1);
+						}
+					} else {
+						return;
+					}
+				}
+			}
+		}
+	}
+	
 	public void keyReleased(KeyEvent e) {
 		// TODO Auto-generated method stub
 		
 	}
 
 	public void keyPressed(KeyEvent e) {
-		if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-			System.out.println("enter");
-			textField.requestFocusInWindow();
-		} else if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
-			if (Game.bankOpen) {
-				Game.bankOpen = false;
-			} else {
-				shutdown();
+		if (makeXOpen) {
+			if (Character.isDigit(e.getKeyChar())) {
+				makeXString += e.getKeyChar();
+			} else if (e.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
+				makeXString = makeXString.substring(0, makeXString.length() - 1);
+			} else if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+				if (!makeXString.equals("")) {
+					makeNum = Integer.parseInt(makeXString);
+					System.out.println(makeNum);
+					processMakeX();
+				}
+				makeXString = "";
+				makeXOpen = false;
+			} else if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+				makeXString = "";
+				makeXOpen = false;
 			}
-		} else if (e.getKeyCode() == KeyEvent.VK_5) {
-			player.damage(10);
-		} else if (e.getKeyCode() == KeyEvent.VK_B) {
-			if (!Game.bankOpen) {
-				Game.bankOpen = true;
+		} else {
+			if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+				System.out.println("enter");
+				textField.requestFocusInWindow();
+				textField.setText("");
+			} else if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+				if (Game.bankOpen) {
+					Game.bankOpen = false;
+				} else {
+					shutdown();
+				}
+			} else if (e.getKeyCode() == KeyEvent.VK_5) {
+				player.damage(10);
+			} else if (e.getKeyCode() == KeyEvent.VK_B) {
+				if (!Game.bankOpen) {
+					Game.bankOpen = true;
+				}
 			}
 		}
 	}
 
 	public void keyTyped(KeyEvent e) {
-		// TODO Auto-generated method stub
 		
 	}
 
@@ -730,7 +828,6 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 	    		cmp[i].addActionListener(actionListener);
 	    		add(cmp[i]);
 	    	}
-	    	//this.setLayout(new GridLayout(0, 1));
 	    	if (this.getPreferredSize().width < 100) {
 	    		this.setPreferredSize(new Dimension(100, this.getPreferredSize().height));
 	    	}
@@ -798,12 +895,16 @@ public class Game extends JPanel implements ActionListener, KeyListener {
     				int amt = 1;
 					if (str[1].equals("5") || str[1].equals("10") || str[1].equals("100")) {
 						amt = Integer.parseInt(str[1]);
-						if (amt > player.getBank().getBank().get(click[0]).getCount()) {
-							amt = player.getBank().getBank().get(click[0]).getCount();
-						}
+					} else if (str[1].equals("x")) {
+						makeXOpen = true;
+						makeXType = "BankWithdraw";
+						amt = 0;
 					} else if (str[1].equals("all-but-1")) {
 						amt = player.getBank().getBank().get(click[0]).getCount() - 1;
 					} else if (str[1].equals("all")) {
+						amt = player.getBank().getBank().get(click[0]).getCount();
+					}
+					if (amt > player.getBank().getBank().get(click[0]).getCount()) {
 						amt = player.getBank().getBank().get(click[0]).getCount();
 					}
 					if (player.getBank().getWithdrawNotes()) {
@@ -907,12 +1008,16 @@ public class Game extends JPanel implements ActionListener, KeyListener {
     				int amt = 1;
 					if (str[1].equals("5") || str[1].equals("10") || str[1].equals("100")) {
 						amt = Integer.parseInt(str[1]);
-						if (amt > player.getBank().getBank().get(click[0]).getCount()) {
-							amt = player.getBank().getBank().get(click[0]).getCount();
-						}
+					} else if (str[1].equals("x")) {
+						makeXOpen = true;
+						makeXType = "BankWithdraw";
+						amt = 0;
 					} else if (str[1].equals("all-but-1")) {
 						amt = player.getBank().getBank().get(click[0]).getCount() - 1;
 					} else if (str[1].equals("all")) {
+						amt = player.getBank().getBank().get(click[0]).getCount();
+					}
+					if (amt > player.getBank().getBank().get(click[0]).getCount()) {
 						amt = player.getBank().getBank().get(click[0]).getCount();
 					}
 					if (player.getBank().getWithdrawNotes()) {
@@ -920,6 +1025,7 @@ public class Game extends JPanel implements ActionListener, KeyListener {
 							player.getBank().getBank().get(click[0]).decreaseCount(amt);
 						}
 					} else {
+						
 						for (int i = 0; i < amt; i++) {
 							if (player.getInv().searchInventorySpace()) {
 								if (player.getInv().addItem(player.getBank().getSlot(click[0]), player.getBank().getWithdrawNotes(), 1)) {

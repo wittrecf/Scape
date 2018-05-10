@@ -15,6 +15,7 @@ import view.ImageEnum;
 public class CollisionDetection {
 	
 	public static int[] checkCollisionsTile(int button, int x, int y, BoardState state, Board board, Player player) {
+		System.out.println("collision check");
 		int[] tmp = new int[6];
 		ArrayList<ArrayList<BoardTile>> tiles = state.tiles;
 		Rectangle bdClick = new Rectangle(x, y, 1, 1);
